@@ -589,6 +589,11 @@ export class GraphQLSchemaBuilder {
             </button>
           </div>
         )}
+        {type.kind === 'type' && (
+          <span class="attribute-count">
+            {type.fields.length} {type.fields.length === 1 ? 'attribute' : 'attributes'}
+          </span>
+        )}
       </div>
     );
   }
