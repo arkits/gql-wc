@@ -146,24 +146,18 @@ export class GraphQLSchemaBuilder {
     event.preventDefault();
     const data = JSON.parse(event.dataTransfer.getData('text/plain'));
     const sourceType = this.types.find(t => t.name === data.typeId);
-    
+
     if (!sourceType) return;
 
     const sourceField = sourceType.fields.find(f => f.name === data.fieldId);
     if (!sourceField) return;
 
-    // Create a new field with only the intended properties
-    const newField: GraphQLField = {
-      name: sourceField.name,
-      type: sourceField.type,
-      description: sourceField.description,
-      isRequired: sourceField.isRequired,
-      isList: sourceField.isList
-    };
+    // Retain directives when moving fields between types
+    const newField: GraphQLField = { ...sourceField };
 
     let fieldName = newField.name;
     let counter = 1;
-    
+
     // Ensure unique field name in target type
     while (targetType.fields.some(f => f.name === fieldName)) {
       fieldName = `${newField.name}${counter}`;
@@ -437,7 +431,7 @@ export class GraphQLSchemaBuilder {
     if (directives.some(d => d.startsWith('@standardizedAttribute'))) {
       badges.push({
         type: 'standardized',
-        label: 'Standardized',
+        label: 'Attribute',
         color: '#3b82f6'
       });
     }
@@ -445,7 +439,7 @@ export class GraphQLSchemaBuilder {
     if (directives.some(d => d.startsWith('@dataEntity'))) {
       badges.push({
         type: 'dataEntity',
-        label: 'Data Entity',
+        label: 'Entity',
         color: '#10b981'
       });
     }
