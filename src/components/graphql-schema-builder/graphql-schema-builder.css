@@ -157,6 +157,8 @@
   max-width: 200px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .fields {
@@ -191,6 +193,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-right: 8px;
 }
 
 .field-type {
@@ -201,6 +204,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100px;
+  margin-right: 8px;
 }
 
 .field.selected {
@@ -998,7 +1002,7 @@ input[type="checkbox"] {
 .tree-node-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
@@ -1009,6 +1013,7 @@ input[type="checkbox"] {
   user-select: none;
   width: 100%;
   box-sizing: border-box;
+  flex-wrap: wrap;
 }
 
 .tree-node-header:hover {
@@ -1058,6 +1063,7 @@ input[type="checkbox"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-right: 8px;
 }
 
 .tree-node-type {
@@ -1066,6 +1072,7 @@ input[type="checkbox"] {
   border-radius: 4px;
   text-transform: uppercase;
   flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .tree-node-type:not(:empty) {
@@ -1294,4 +1301,36 @@ input[type="checkbox"] {
   font-size: 0.95rem;
   color: var(--text-color);
   font-weight: 500;
+}
+
+.directive-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  color: white;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.directive-badge.small {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+}
+
+.directive-badges {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+  flex-wrap: wrap;
+}
+
+.tree-node-header .directive-badges {
+  margin-left: auto;
+}
+
+.tree-field .directive-badges {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
 } 

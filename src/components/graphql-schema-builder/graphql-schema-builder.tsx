@@ -422,7 +422,47 @@ export class GraphQLSchemaBuilder {
     }
   };
 
+  private getDirectiveBadges(directives: string[] = []) {
+    const badges = [];
+    
+    if (directives.includes('@deprecated')) {
+      badges.push({
+        type: 'deprecated',
+        label: 'Deprecated',
+        color: '#6b7280'
+      });
+    }
+    
+    if (directives.some(d => d.startsWith('@standardizedAttribute'))) {
+      badges.push({
+        type: 'standardized',
+        label: 'Standardized',
+        color: '#3b82f6'
+      });
+    }
+    
+    if (directives.some(d => d.startsWith('@dataEntity'))) {
+      badges.push({
+        type: 'dataEntity',
+        label: 'Data Entity',
+        color: '#10b981'
+      });
+    }
+    
+    if (directives.some(d => d.startsWith('@dpi_requiredScope'))) {
+      badges.push({
+        type: 'scope',
+        label: 'Scoped',
+        color: '#f59e0b'
+      });
+    }
+    
+    return badges;
+  }
+
   private renderTypeCard(type: GraphQLType) {
+    const directiveBadges = this.getDirectiveBadges(type.directives);
+    
     return (
       <div 
         class={{
@@ -442,6 +482,15 @@ export class GraphQLSchemaBuilder {
             <span class={`type-badge ${type.kind}`}>
               {type.kind}
             </span>
+            {directiveBadges.map(badge => (
+              <span 
+                class="directive-badge"
+                style={{ backgroundColor: badge.color }}
+                title={badge.label}
+              >
+                {badge.label}
+              </span>
+            ))}
           </h3>
           <button 
             class="delete-btn"
@@ -455,42 +504,54 @@ export class GraphQLSchemaBuilder {
         </div>
         {type.kind === 'type' ? (
           <div class="fields">
-            {type.fields.map(field => (
-              <div 
-                class={{
-                  'field': true,
-                  'selected': this.selectedField?.name === field.name,
-                  'drag-over': this.dragOverField === field.name
-                }}
-                draggable={true}
-                onDragStart={(e) => this.handleDragStart(e, type, field)}
-                onDragEnd={this.handleDragEnd}
-                onDrop={(e) => this.handleDrop(e, type, field)}
-                onDragOver={(e) => this.handleDragOver(e, type, field)}
-                onDragLeave={() => this.handleDragLeave()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  this.handleFieldClick(field);
-                }}
-              >
-                <span class="field-name">{field.name}</span>
-                <span class="field-type">
-                  {field.isList ? '[' : ''}
-                  {field.type}
-                  {field.isList ? ']' : ''}
-                  {field.isRequired ? '!' : ''}
-                </span>
-                <button 
-                  class="delete-btn small"
+            {type.fields.map(field => {
+              const fieldDirectiveBadges = this.getDirectiveBadges(field.directives);
+              return (
+                <div 
+                  class={{
+                    'field': true,
+                    'selected': this.selectedField?.name === field.name,
+                    'drag-over': this.dragOverField === field.name
+                  }}
+                  draggable={true}
+                  onDragStart={(e) => this.handleDragStart(e, type, field)}
+                  onDragEnd={this.handleDragEnd}
+                  onDrop={(e) => this.handleDrop(e, type, field)}
+                  onDragOver={(e) => this.handleDragOver(e, type, field)}
+                  onDragLeave={() => this.handleDragLeave()}
                   onClick={(e) => {
                     e.stopPropagation();
-                    this.handleDeleteField(type, field);
+                    this.handleFieldClick(field);
                   }}
                 >
-                  ×
-                </button>
-              </div>
-            ))}
+                  <span class="field-name">{field.name}</span>
+                  <span class="field-type">
+                    {field.isList ? '[' : ''}
+                    {field.type}
+                    {field.isList ? ']' : ''}
+                    {field.isRequired ? '!' : ''}
+                  </span>
+                  {fieldDirectiveBadges.map(badge => (
+                    <span 
+                      class="directive-badge small"
+                      style={{ backgroundColor: badge.color }}
+                      title={badge.label}
+                    >
+                      {badge.label}
+                    </span>
+                  ))}
+                  <button 
+                    class="delete-btn small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      this.handleDeleteField(type, field);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
             <button 
               class="add-field-btn"
               onClick={(e) => {
@@ -1037,76 +1098,104 @@ export class GraphQLSchemaBuilder {
   private renderTreeView() {
     return (
       <div class="tree-view">
-        {this.getFilteredTypes().map(type => (
-          <div class={{
-            'tree-node': true,
-            'collapsed': this.collapsedTypes.has(type.name)
-          }}>
-            <div 
-              class={{
-                'tree-node-header': true,
-                'selected': this.selectedType?.name === type.name,
-                'drag-over': this.dragOverType === type.name
-              }}
-              onClick={(e) => {
-                if ((e.target as HTMLElement).closest('.tree-node-icon')) {
-                  this.handleTreeNodeToggle(type.name, e);
-                } else {
-                  this.handleTypeClick(type);
-                }
-              }}
-              onDrop={(e) => this.handleDrop(e, type)}
-              onDragOver={(e) => this.handleDragOver(e, type)}
-              onDragLeave={() => this.handleDragLeave()}
-            >
-              <span 
-                class="tree-node-icon"
-                onClick={(e) => this.handleTreeNodeToggle(type.name, e)}
+        {this.getFilteredTypes().map(type => {
+          const directiveBadges = this.getDirectiveBadges(type.directives);
+          return (
+            <div class={{
+              'tree-node': true,
+              'collapsed': this.collapsedTypes.has(type.name)
+            }}>
+              <div 
+                class={{
+                  'tree-node-header': true,
+                  'selected': this.selectedType?.name === type.name,
+                  'drag-over': this.dragOverType === type.name
+                }}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest('.tree-node-icon')) {
+                    this.handleTreeNodeToggle(type.name, e);
+                  } else {
+                    this.handleTypeClick(type);
+                  }
+                }}
+                onDrop={(e) => this.handleDrop(e, type)}
+                onDragOver={(e) => this.handleDragOver(e, type)}
+                onDragLeave={() => this.handleDragLeave()}
               >
-                {type.kind === 'type' ? 'T' : 'E'}
-              </span>
-              <span class="tree-node-name">{type.name}</span>
-              <span class="tree-node-type">{type.kind}</span>
-            </div>
-            {type.kind === 'type' && (
-              <div class="tree-node-children">
-                {type.fields.map(field => (
-                  <div 
-                    class={{
-                      'tree-field': true,
-                      'selected': this.selectedField?.name === field.name,
-                      'drag-over': this.dragOverField === field.name
-                    }}
-                    onClick={() => this.handleFieldClick(field)}
-                    draggable={true}
-                    onDragStart={(e) => this.handleDragStart(e, type, field)}
-                    onDragEnd={this.handleDragEnd}
-                    onDrop={(e) => this.handleDrop(e, type, field)}
-                    onDragOver={(e) => this.handleDragOver(e, type, field)}
-                    onDragLeave={() => this.handleDragLeave()}
-                  >
-                    <span class="tree-field-name">{field.name}</span>
-                    <span class="tree-field-type">
-                      {field.isList ? '[' : ''}
-                      {field.type}
-                      {field.isList ? ']' : ''}
-                      {field.isRequired ? '!' : ''}
+                <span 
+                  class="tree-node-icon"
+                  onClick={(e) => this.handleTreeNodeToggle(type.name, e)}
+                >
+                  {type.kind === 'type' ? 'T' : 'E'}
+                </span>
+                <span class="tree-node-name">{type.name}</span>
+                <span class="tree-node-type">{type.kind}</span>
+                <div class="directive-badges">
+                  {directiveBadges.map(badge => (
+                    <span 
+                      class="directive-badge"
+                      style={{ backgroundColor: badge.color }}
+                      title={badge.label}
+                    >
+                      {badge.label}
                     </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            )}
-            {type.kind === 'enum' && (
-              <div class="tree-node-children">
-                {type.values?.map(value => (
-                  <div class="tree-field">
-                    <span class="tree-field-name">{value}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+              {type.kind === 'type' && (
+                <div class="tree-node-children">
+                  {type.fields.map(field => {
+                    const fieldDirectiveBadges = this.getDirectiveBadges(field.directives);
+                    return (
+                      <div 
+                        class={{
+                          'tree-field': true,
+                          'selected': this.selectedField?.name === field.name,
+                          'drag-over': this.dragOverField === field.name
+                        }}
+                        onClick={() => this.handleFieldClick(field)}
+                        draggable={true}
+                        onDragStart={(e) => this.handleDragStart(e, type, field)}
+                        onDragEnd={this.handleDragEnd}
+                        onDrop={(e) => this.handleDrop(e, type, field)}
+                        onDragOver={(e) => this.handleDragOver(e, type, field)}
+                        onDragLeave={() => this.handleDragLeave()}
+                      >
+                        <span class="tree-field-name">{field.name}</span>
+                        <span class="tree-field-type">
+                          {field.isList ? '[' : ''}
+                          {field.type}
+                          {field.isList ? ']' : ''}
+                          {field.isRequired ? '!' : ''}
+                        </span>
+                        <div class="directive-badges">
+                          {fieldDirectiveBadges.map(badge => (
+                            <span 
+                              class="directive-badge small"
+                              style={{ backgroundColor: badge.color }}
+                              title={badge.label}
+                            >
+                              {badge.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {type.kind === 'enum' && (
+                <div class="tree-node-children">
+                  {type.values?.map(value => (
+                    <div class="tree-field">
+                      <span class="tree-field-name">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }
