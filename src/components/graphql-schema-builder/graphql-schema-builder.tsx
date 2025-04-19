@@ -633,8 +633,7 @@ export class GraphQLSchemaBuilder {
                     <div class="directive-args">
                       {Object.entries(directive.arguments).map(([key, value]) => (
                         <div class="directive-arg">
-                          <span class="arg-key">{key}:</span>
-                          <span class="arg-value">{value}</span>
+                          {key}: "{value}"
                         </div>
                       ))}
                     </div>

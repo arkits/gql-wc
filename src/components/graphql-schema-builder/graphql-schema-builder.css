@@ -1368,10 +1368,10 @@ input[type="checkbox"] {
 
 .directive-arg {
   display: flex;
-  gap: 0.5rem;
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   align-items: center;
+  color: #1f2937;
+  font-family: monospace;
 }
 
 .arg-key {
