@@ -871,6 +871,7 @@ export class GraphQLSchemaBuilder {
               value={this.selectedType.name}
               onInput={this.handleTypeNameChange}
               placeholder="Type name"
+              class="type-name-input"
             />
             <textarea
               value={this.selectedType.description || ''}
@@ -881,6 +882,17 @@ export class GraphQLSchemaBuilder {
                 this.emitChange();
               }}
             />
+            <div class="fields-section">
+              <h3>Fields ({this.selectedType.fields.length})</h3>
+              <ul class="fields-list">
+                {this.selectedType.fields.map(field => (
+                  <li key={field.name} class="field-item">
+                    <span class="field-name">{field.name}</span>
+                    <span class="field-type">{field.type}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
             {this.renderDirectives(this.selectedType.directives || [])}
             {this.renderAuthSection(this.selectedType.directives || [])}
           </div>
@@ -1348,4 +1360,4 @@ export class GraphQLSchemaBuilder {
       </div>
     );
   }
-} 
+}
