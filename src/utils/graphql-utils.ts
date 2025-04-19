@@ -12,111 +12,170 @@ import {
   isInputObjectType,
   isEnumType,
   GraphQLEnumType,
+  visit,
+  Kind,
+  DirectiveNode,
+  ArgumentNode,
+  StringValueNode,
+  NamedTypeNode,
+  NonNullTypeNode,
+  ListTypeNode,
 } from 'graphql';
 
 export function parseGraphQLSchema(schema: string): GraphQLType[] {
   const types: GraphQLType[] = [];
-  const lines = schema.split('\n');
-  let currentType: GraphQLType = null;
-  let currentField: GraphQLField = null;
+  
+  try {
+    // Parse the schema into an AST
+    const ast = parse(schema);
+    
+    // Visit each type definition in the AST
+    visit(ast, {
+      ObjectTypeDefinition(node) {
+        const type: GraphQLType = {
+          name: node.name.value,
+          fields: [],
+          kind: 'type',
+          directives: [],
+          directiveArgs: {}
+        };
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
+        // Parse directives on the type
+        if (node.directives) {
+          for (const directive of node.directives) {
+            const directiveStr = buildDirectiveString(directive);
+            type.directives.push(directiveStr);
 
-    // Parse type definition
-    if (line.startsWith('type ') || line.startsWith('enum ')) {
-      const kind = line.startsWith('type ') ? 'type' : 'enum';
-      const typeDef = line.split('{')[0].trim();
-      const name = typeDef.split(' ')[1].trim();
-      
-      currentType = {
-        name,
-        fields: [],
-        kind,
-        directives: [],
-        directiveArgs: {}
-      };
-
-      // Parse directives on type
-      const directiveMatches = typeDef.match(/@\w+(?:\([^)]+\))?/g);
-      if (directiveMatches) {
-        currentType.directives = directiveMatches;
-        for (const directive of directiveMatches) {
-          const [_, directiveName, args] = directive.match(/@(\w+)(?:\(([^)]+)\))?/);
-          if (args) {
-            const argMatch = args.match(/(\w+):\s*['"]([^'"]+)['"]/);
-            if (argMatch) {
-              const [_, argName, argValue] = argMatch;
-              if (directive.startsWith('@dpi_requiredScope')) {
-                currentType.directiveArgs.scope = argValue;
-              } else if (directive.startsWith('@standardizedAttribute')) {
-                currentType.directiveArgs.standardizedAttributeVersionId = argValue;
-              } else if (directive.startsWith('@dataEntity')) {
-                currentType.directiveArgs.dataEntityVersionId = argValue;
+            // Parse directive arguments
+            if (directive.arguments) {
+              for (const arg of directive.arguments) {
+                if (arg.value.kind === Kind.STRING) {
+                  if (directive.name.value === 'dpi_requiredScope' && arg.name.value === 'scope') {
+                    type.directiveArgs.scope = arg.value.value;
+                  } else if (directive.name.value === 'standardizedAttribute' && arg.name.value === 'standardizedAttributeVersionId') {
+                    type.directiveArgs.standardizedAttributeVersionId = arg.value.value;
+                  } else if (directive.name.value === 'dataEntity' && arg.name.value === 'dataEntityVersionId') {
+                    type.directiveArgs.dataEntityVersionId = arg.value.value;
+                  }
+                }
               }
             }
           }
         }
-      }
 
-      types.push(currentType);
-    }
-    // Parse field definition
-    else if (line.includes(':')) {
-      // Split by colon and get the field name and the rest
-      const [fieldName, rest] = line.split(':').map(s => s.trim());
-      
-      // Extract the type part before any directives
-      const typeMatch = rest.match(/^([^@]+)/);
-      if (!typeMatch) continue;
-      
-      const typePart = typeMatch[1].trim();
-      const isRequired = typePart.endsWith('!');
-      const isList = typePart.startsWith('[');
-      const type = typePart.replace(/[\[\]!]/g, '').trim();
-      
-      currentField = {
-        name: fieldName,
-        type,
-        isRequired,
-        isList,
-        directives: [],
-        directiveArgs: {}
-      };
+        // Parse fields
+        if (node.fields) {
+          for (const fieldNode of node.fields) {
+            const field: GraphQLField = {
+              name: fieldNode.name.value,
+              type: '',
+              directives: [],
+              directiveArgs: {},
+              isRequired: false,
+              isList: false
+            };
 
-      // Parse any directives that might be after the type
-      const directiveMatches = rest.match(/@\w+(?:\([^)]+\))?/g);
-      if (directiveMatches) {
-        currentField.directives = directiveMatches;
-        for (const directive of directiveMatches) {
-          const [_, directiveName, args] = directive.match(/@(\w+)(?:\(([^)]+)\))?/);
-          if (args) {
-            const argMatch = args.match(/(\w+):\s*['"]([^'"]+)['"]/);
-            if (argMatch) {
-              const [_, argName, argValue] = argMatch;
-              if (directive.startsWith('@dpi_requiredScope')) {
-                currentField.directiveArgs.scope = argValue;
-              } else if (directive.startsWith('@standardizedAttribute')) {
-                currentField.directiveArgs.standardizedAttributeVersionId = argValue;
-              } else if (directive.startsWith('@dataEntity')) {
-                currentField.directiveArgs.dataEntityVersionId = argValue;
+            // Parse field type
+            let typeNode = fieldNode.type;
+            field.isRequired = typeNode.kind === Kind.NON_NULL_TYPE;
+            if (field.isRequired) {
+              typeNode = (typeNode as NonNullTypeNode).type;
+            }
+            field.isList = typeNode.kind === Kind.LIST_TYPE;
+            if (field.isList) {
+              typeNode = (typeNode as ListTypeNode).type;
+              if (typeNode.kind === Kind.NON_NULL_TYPE) {
+                typeNode = (typeNode as NonNullTypeNode).type;
+              }
+            }
+            field.type = (typeNode as NamedTypeNode).name.value;
+
+            // Parse field directives
+            if (fieldNode.directives) {
+              for (const directive of fieldNode.directives) {
+                const directiveStr = buildDirectiveString(directive);
+                field.directives.push(directiveStr);
+
+                // Parse directive arguments
+                if (directive.arguments) {
+                  for (const arg of directive.arguments) {
+                    if (arg.value.kind === Kind.STRING) {
+                      if (directive.name.value === 'dpi_requiredScope' && arg.name.value === 'scope') {
+                        field.directiveArgs.scope = arg.value.value;
+                      } else if (directive.name.value === 'standardizedAttribute' && arg.name.value === 'standardizedAttributeVersionId') {
+                        field.directiveArgs.standardizedAttributeVersionId = arg.value.value;
+                      } else if (directive.name.value === 'dataEntity' && arg.name.value === 'dataEntityVersionId') {
+                        field.directiveArgs.dataEntityVersionId = arg.value.value;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            type.fields.push(field);
+          }
+        }
+
+        types.push(type);
+      },
+      EnumTypeDefinition(node) {
+        const enumType: GraphQLType = {
+          name: node.name.value,
+          fields: [],
+          kind: 'enum',
+          values: [],
+          directives: [],
+          directiveArgs: {}
+        };
+
+        // Parse enum values
+        if (node.values) {
+          enumType.values = node.values.map(value => value.name.value);
+        }
+
+        // Parse directives on the enum
+        if (node.directives) {
+          for (const directive of node.directives) {
+            const directiveStr = buildDirectiveString(directive);
+            enumType.directives.push(directiveStr);
+
+            // Parse directive arguments
+            if (directive.arguments) {
+              for (const arg of directive.arguments) {
+                if (arg.value.kind === Kind.STRING) {
+                  if (directive.name.value === 'dpi_requiredScope' && arg.name.value === 'scope') {
+                    enumType.directiveArgs.scope = arg.value.value;
+                  }
+                }
               }
             }
           }
         }
-      }
 
-      currentType.fields.push(currentField);
-    }
-    // Parse enum values
-    else if (currentType?.kind === 'enum' && line.match(/^\w+$/)) {
-      if (!currentType.values) currentType.values = [];
-      currentType.values.push(line);
-    }
+        types.push(enumType);
+      }
+    });
+
+    return types;
+  } catch (error) {
+    console.error('Error parsing GraphQL schema:', error);
+    throw error;
   }
+}
 
-  return types;
+function buildDirectiveString(directive: DirectiveNode): string {
+  let str = `@${directive.name.value}`;
+  if (directive.arguments && directive.arguments.length > 0) {
+    const args = directive.arguments.map(arg => {
+      const value = arg.value.kind === Kind.STRING 
+        ? `"${(arg.value as StringValueNode).value}"`
+        : (arg.value as any).value;
+      return `${arg.name.value}:${value}`;
+    });
+    str += `(${args.join(',')})`;
+  }
+  return str;
 }
 
 export function generateGraphQLSchema(types: GraphQLType[]): string {
@@ -126,38 +185,24 @@ export function generateGraphQLSchema(types: GraphQLType[]): string {
     if (type.kind === 'type') {
       schema += `type ${type.name}`;
       if (type.directives?.length) {
-        schema += ' ' + type.directives.map(directive => {
-          if (directive === '@dpi_requiredScope' && type.directiveArgs?.scope) {
-            return `${directive}(scope:"${type.directiveArgs.scope}")`;
-          } else if (directive === '@standardizedAttribute' && type.directiveArgs?.standardizedAttributeVersionId) {
-            return `${directive}(standardizedAttributeVersionId:"${type.directiveArgs.standardizedAttributeVersionId}")`;
-          } else if (directive === '@dataEntity' && type.directiveArgs?.dataEntityVersionId) {
-            return `${directive}(dataEntityVersionId:"${type.directiveArgs.dataEntityVersionId}")`;
-          }
-          return directive;
-        }).join(' ');
+        schema += ' ' + type.directives.join(' ');
       }
       schema += ' {\n';
       
       for (const field of type.fields) {
         schema += `  ${field.name}: ${field.isList ? '[' : ''}${field.type}${field.isList ? ']' : ''}${field.isRequired ? '!' : ''}`;
         if (field.directives?.length) {
-          schema += ' ' + field.directives.map(directive => {
-            if (directive === '@dpi_requiredScope' && field.directiveArgs?.scope) {
-              return `${directive}(scope:"${field.directiveArgs.scope}")`;
-            } else if (directive === '@standardizedAttribute' && field.directiveArgs?.standardizedAttributeVersionId) {
-              return `${directive}(standardizedAttributeVersionId:"${field.directiveArgs.standardizedAttributeVersionId}")`;
-            } else if (directive === '@dataEntity' && field.directiveArgs?.dataEntityVersionId) {
-              return `${directive}(dataEntityVersionId:"${field.directiveArgs.dataEntityVersionId}")`;
-            }
-            return directive;
-          }).join(' ');
+          schema += ' ' + field.directives.join(' ');
         }
         schema += '\n';
       }
       schema += '}\n\n';
     } else if (type.kind === 'enum') {
-      schema += `enum ${type.name} {\n`;
+      schema += `enum ${type.name}`;
+      if (type.directives?.length) {
+        schema += ' ' + type.directives.join(' ');
+      }
+      schema += ' {\n';
       for (const value of type.values || []) {
         schema += `  ${value}\n`;
       }
