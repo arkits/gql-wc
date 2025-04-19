@@ -1499,4 +1499,69 @@ input[type="checkbox"] {
 
 .type-card .attribute-count {
   display: none;
-} 
+}
+
+/* Updated table styling for fields in Type Details to look more professional and inspired by Vercel's design. */
+.fields-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: var(--card-background);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.fields-table th,
+.fields-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fields-table th {
+  background-color: var(--background-color);
+  font-weight: 600;
+  color: var(--secondary-color);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fields-table tr:last-child td {
+  border-bottom: none;
+}
+
+.fields-table tr:hover td {
+  background-color: var(--hover-color);
+}
+
+.fields-table .field-name-cell {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fields-table .field-type-cell {
+  color: var(--secondary-color);
+  font-family: monospace;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fields-table .custom-type-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.fields-table .custom-type-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}

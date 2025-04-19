@@ -1,6 +1,6 @@
 import { Component, Prop, State, Event, EventEmitter, h, Watch } from '@stencil/core';
 import { GraphQLType, GraphQLField } from './types';
-import { parseGraphQLSchema, generateGraphQLSchema, validateTypeName, validateFieldName } from '../../utils/graphql-utils';
+import { parseGraphQLSchema, generateGraphQLSchema } from '../../utils/graphql-utils';
 
 @Component({
   tag: 'graphql-schema-builder',
@@ -878,14 +878,46 @@ export class GraphQLSchemaBuilder {
             />
             <div class="fields-section">
               <h3>Fields ({this.selectedType.fields.length})</h3>
-              <ul class="fields-list">
-                {this.selectedType.fields.map(field => (
-                  <li key={field.name} class="field-item">
-                    <span class="field-name">{field.name}</span>
-                    <span class="field-type">{field.type}</span>
-                  </li>
-                ))}
-              </ul>
+              <table class="fields-table">
+                <thead>
+                  <tr>
+                    <th class="field-name-header">Name</th>
+                    <th class="field-type-header">Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {this.selectedType.fields.map(field => {
+                    const fieldTypeWithoutModifiers = field.type.replace(/[\[\]!]/g, ''); // Remove array and non-null markers
+                    const isCustomType = this.types.some(t => t.name === fieldTypeWithoutModifiers);
+                    return (
+                      <tr key={field.name} class="field-item">
+                        <td class="field-name-cell">{field.name}</td>
+                        <td class="field-type-cell">
+                          {isCustomType ? (
+                            <a
+                              href="#"
+                              class="custom-type-link"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const targetType = this.types.find(t => t.name === fieldTypeWithoutModifiers);
+                                if (targetType) {
+                                  this.selectedType = targetType;
+                                  this.selectedField = null;
+                                  this.activeTab = 'type';
+                                }
+                              }}
+                            >
+                              {field.type}
+                            </a>
+                          ) : (
+                            field.type
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
             {this.renderDirectives(this.selectedType.directives || [])}
             {this.renderAuthSection(this.selectedType.directives || [])}
@@ -901,6 +933,28 @@ export class GraphQLSchemaBuilder {
               onInput={this.handleFieldNameChange}
               placeholder="Field name"
             />
+            <select
+              onInput={(e) => {
+                const select = e.target as HTMLSelectElement;
+                const newParentType = this.types.find(t => t.name === select.value);
+                if (newParentType && this.selectedType) {
+                  // Remove field from current type
+                  this.selectedType.fields = this.selectedType.fields.filter(f => f !== this.selectedField);
+                  // Add field to new parent type
+                  newParentType.fields = [...newParentType.fields, this.selectedField];
+                  this.selectedType = newParentType;
+                  this.emitChange();
+                }
+              }}
+              class="parent-type-select"
+              aria-label="Parent type"
+            >
+              {this.types.map(type => (
+                <option value={type.name} selected={type.name === this.selectedType.name}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
             <select
               onInput={this.handleFieldTypeChange}
               class="field-type-select"

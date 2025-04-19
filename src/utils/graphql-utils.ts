@@ -1,25 +1,11 @@
 import { GraphQLType, GraphQLField } from '../components/graphql-schema-builder/types';
 import {
-  parse,
-  print,
-  buildSchema,
-  GraphQLSchema,
-  GraphQLObjectType,
-  GraphQLInputObjectType,
-  GraphQLList,
-  GraphQLNonNull,
-  isObjectType,
-  isInputObjectType,
-  isEnumType,
-  GraphQLEnumType,
-  visit,
+  parse, visit,
   Kind,
-  DirectiveNode,
-  ArgumentNode,
-  StringValueNode,
+  DirectiveNode, StringValueNode,
   NamedTypeNode,
   NonNullTypeNode,
-  ListTypeNode,
+  ListTypeNode
 } from 'graphql';
 
 export function parseGraphQLSchema(schema: string): GraphQLType[] {
