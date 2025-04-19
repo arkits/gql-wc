@@ -29,6 +29,7 @@ export class GraphQLSchemaBuilder {
   @State() viewMode: 'card' | 'tree' = 'card';
   @State() showViewDropdown: boolean = false;
   @State() collapsedTypes: Set<string> = new Set();
+  @State() pendingScope: string = '';
 
   @Event() schemaChange: EventEmitter<{
     types: GraphQLType[];
@@ -738,32 +739,45 @@ export class GraphQLSchemaBuilder {
           <div class="auth-scope">
             <input
               type="text"
-              value={currentScope}
+              value={this.pendingScope || currentScope}
               placeholder="Enter required scope..."
               onInput={(e) => {
                 const target = e.target as HTMLInputElement;
-                const newScope = target.value;
-                if (this.activeTab === 'type' && this.selectedType) {
-                  this.handleUpdateScope(this.selectedType, newScope);
-                } else if (this.activeTab === 'field' && this.selectedField) {
-                  this.handleUpdateScope(this.selectedField, newScope);
-                }
+                this.pendingScope = target.value;
               }}
             />
-            {currentScope && (
-              <button 
-                class="delete-btn small"
-                onClick={() => {
-                  if (this.activeTab === 'type' && this.selectedType) {
-                    this.handleRemoveScope(this.selectedType);
-                  } else if (this.activeTab === 'field' && this.selectedField) {
-                    this.handleRemoveScope(this.selectedField);
-                  }
-                }}
-              >
-                ×
-              </button>
-            )}
+            <div class="button-group">
+              {(this.pendingScope !== currentScope) && (
+                <button 
+                  class="apply-btn"
+                  onClick={() => {
+                    if (this.activeTab === 'type' && this.selectedType) {
+                      this.handleUpdateScope(this.selectedType, this.pendingScope);
+                    } else if (this.activeTab === 'field' && this.selectedField) {
+                      this.handleUpdateScope(this.selectedField, this.pendingScope);
+                    }
+                    this.pendingScope = '';
+                  }}
+                >
+                  Apply
+                </button>
+              )}
+              {currentScope && (
+                <button 
+                  class="delete-btn small"
+                  onClick={() => {
+                    if (this.activeTab === 'type' && this.selectedType) {
+                      this.handleRemoveScope(this.selectedType);
+                    } else if (this.activeTab === 'field' && this.selectedField) {
+                      this.handleRemoveScope(this.selectedField);
+                    }
+                    this.pendingScope = '';
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -65,7 +65,7 @@
         """
         User profile containing additional user information
         """
-        type UserProfile @dpi_requiredScope(scope:"profile:read") {
+        type UserProfile @dataEntity(dataEntityVersionId:"550e8400-e29b-41d4-a716-446655440123") @dpi_requiredScope(scope:"profile:read") {
           id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440014")
           user: User! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440015")
           bio: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440016")
