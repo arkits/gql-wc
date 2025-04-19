@@ -541,35 +541,70 @@ export class GraphQLSchemaBuilder {
   private renderDirectives(directives: string[]) {
     const isDeprecated = directives.includes('@deprecated');
 
+    // Parse directive name and arguments into a structured format
+    const parsedDirectives = directives
+      .filter(d => d !== '@deprecated')
+      .map(directive => {
+        const [name, args] = directive.split('(');
+        const directiveName = name.trim();
+        const argumentsStr = args ? args.replace(/\)$/, '') : '';
+        
+        // Parse arguments into key-value pairs
+        const argsObj: { [key: string]: string } = {};
+        if (argumentsStr) {
+          argumentsStr.split(',').forEach(arg => {
+            const [key, value] = arg.split(':').map(s => s.trim());
+            if (key && value) {
+              // Remove quotes from value
+              argsObj[key] = value.replace(/^['"]|['"]$/g, '');
+            }
+          });
+        }
+
+        return {
+          name: directiveName,
+          arguments: argsObj
+        };
+      });
+
     return (
       <div class="directives">
         <h3>Directives</h3>
-        <div class="directive-list">
-          {directives.filter(d => d !== '@deprecated').map(directive => {
-            const versionId = this.parseVersionId(directive);
-            const baseDirective = directive.split('(')[0];
-            
-            return (
-              <div class="directive-item">
-                <div class="directive-info">
-                  <span class="directive-name">{baseDirective}</span>
-                  {versionId && (
-                    <div class="directive-version">
-                      <span class="version-label">Version ID:</span>
-                      <span class="version-value">{versionId}</span>
+        <table class="directives-table">
+          <thead>
+            <tr>
+              <th>Directive</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parsedDirectives.map((directive, index) => (
+              <tr key={index}>
+                <td>
+                  <div class="directive-name">{directive.name}</div>
+                  {Object.entries(directive.arguments).length > 0 && (
+                    <div class="directive-args">
+                      {Object.entries(directive.arguments).map(([key, value]) => (
+                        <div class="directive-arg">
+                          <span class="arg-key">{key}:</span>
+                          <span class="arg-value">{value}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </div>
-                <button 
-                  class="delete-btn small"
-                  onClick={() => this.handleRemoveDirective(directive)}
-                >
-                  ×
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                </td>
+                <td>
+                  <button 
+                    class="delete-btn small"
+                    onClick={() => this.handleRemoveDirective(directives[index])}
+                  >
+                    ×
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <div class="directive-options">
           <label class="directive-checkbox">
             <input
@@ -584,7 +619,7 @@ export class GraphQLSchemaBuilder {
                 }
               }}
             />
-            Deprecated
+            <span>Deprecated</span>
           </label>
         </div>
       </div>
@@ -1189,7 +1224,7 @@ export class GraphQLSchemaBuilder {
           </div>
         </div>
         <div class="main-content">
-          <div class="types-grid">
+          <div class="types-grid" data-view={this.viewMode}>
             {this.viewMode === 'card' ? (
               this.getFilteredTypes().map(type => this.renderTypeCard(type))
             ) : (
