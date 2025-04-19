@@ -1021,6 +1021,11 @@ input[type="checkbox"] {
   border-color: #3b82f6;
 }
 
+.tree-node-header.drag-over {
+  background-color: rgba(0, 123, 255, 0.1);
+  border: 2px dashed #007bff;
+}
+
 .tree-node-icon {
   width: 24px;
   height: 24px;
@@ -1109,6 +1114,24 @@ input[type="checkbox"] {
 .tree-field.selected {
   background-color: #eff6ff;
   border-color: #3b82f6;
+}
+
+.tree-field.drag-over {
+  background-color: rgba(0, 123, 255, 0.1);
+  border: 2px dashed #007bff;
+}
+
+.tree-field[draggable="true"] {
+  cursor: move;
+}
+
+.tree-field[draggable="true"]:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.tree-field.dragging {
+  opacity: 0.5;
+  background-color: rgba(0, 123, 255, 0.1);
 }
 
 .tree-field-name {

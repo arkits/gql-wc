@@ -1045,7 +1045,8 @@ export class GraphQLSchemaBuilder {
             <div 
               class={{
                 'tree-node-header': true,
-                'selected': this.selectedType?.name === type.name
+                'selected': this.selectedType?.name === type.name,
+                'drag-over': this.dragOverType === type.name
               }}
               onClick={(e) => {
                 if ((e.target as HTMLElement).closest('.tree-node-icon')) {
@@ -1054,6 +1055,9 @@ export class GraphQLSchemaBuilder {
                   this.handleTypeClick(type);
                 }
               }}
+              onDrop={(e) => this.handleDrop(e, type)}
+              onDragOver={(e) => this.handleDragOver(e, type)}
+              onDragLeave={() => this.handleDragLeave()}
             >
               <span 
                 class="tree-node-icon"
@@ -1070,9 +1074,16 @@ export class GraphQLSchemaBuilder {
                   <div 
                     class={{
                       'tree-field': true,
-                      'selected': this.selectedField?.name === field.name
+                      'selected': this.selectedField?.name === field.name,
+                      'drag-over': this.dragOverField === field.name
                     }}
                     onClick={() => this.handleFieldClick(field)}
+                    draggable={true}
+                    onDragStart={(e) => this.handleDragStart(e, type, field)}
+                    onDragEnd={this.handleDragEnd}
+                    onDrop={(e) => this.handleDrop(e, type, field)}
+                    onDragOver={(e) => this.handleDragOver(e, type, field)}
+                    onDragLeave={() => this.handleDragLeave()}
                   >
                     <span class="tree-field-name">{field.name}</span>
                     <span class="tree-field-type">
