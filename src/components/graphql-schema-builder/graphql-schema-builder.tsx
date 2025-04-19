@@ -302,10 +302,17 @@ export class GraphQLSchemaBuilder {
   };
 
   private handleDeleteField = (type: GraphQLType, field: GraphQLField) => {
-    type.fields = type.fields.filter(f => f !== field);
-    if (this.selectedField === field) {
-      this.selectedField = null;
-    }
+    const typeIndex = this.types.findIndex(t => t.name === type.name);
+    if (typeIndex === -1) return;
+
+    const updatedType = { ...this.types[typeIndex] };
+    updatedType.fields = updatedType.fields.filter(f => f.name !== field.name);
+
+    const updatedTypes = [...this.types];
+    updatedTypes[typeIndex] = updatedType;
+
+    this.types = updatedTypes;
+    this.selectedField = null;
     this.emitChange();
   };
 
@@ -519,28 +526,43 @@ export class GraphQLSchemaBuilder {
     );
   }
 
-  private renderDirectives() {
-    const directives = this.activeTab === 'type' 
-      ? this.selectedType?.directives || []
-      : this.selectedField?.directives || [];
+  private parseVersionId(directive: string): string | null {
+    // Handle both formats: @directive(arg='value') and @directive(arg="value")
+    const match = directive.match(/(?:standardizedAttributeVersionId|dataEntityVersionId)=['"]([^'"]+)['"]/);
+    return match ? match[1] : null;
+  }
 
+  private renderDirectives(directives: string[]) {
     const isDeprecated = directives.includes('@deprecated');
 
     return (
       <div class="directives">
         <h3>Directives</h3>
         <div class="directive-list">
-          {directives.filter(d => d !== '@deprecated').map(directive => (
-            <div class="directive-item">
-              <span>{directive}</span>
-              <button 
-                class="delete-btn small"
-                onClick={() => this.handleRemoveDirective(directive)}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+          {directives.filter(d => d !== '@deprecated').map(directive => {
+            const versionId = this.parseVersionId(directive);
+            const baseDirective = directive.split('(')[0];
+            
+            return (
+              <div class="directive-item">
+                <div class="directive-info">
+                  <span class="directive-name">{baseDirective}</span>
+                  {versionId && (
+                    <div class="directive-version">
+                      <span class="version-label">Version ID:</span>
+                      <span class="version-value">{versionId}</span>
+                    </div>
+                  )}
+                </div>
+                <button 
+                  class="delete-btn small"
+                  onClick={() => this.handleRemoveDirective(directive)}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
         </div>
         <div class="directive-options">
           <label class="directive-checkbox">
@@ -657,7 +679,7 @@ export class GraphQLSchemaBuilder {
                 this.emitChange();
               }}
             />
-            {this.renderDirectives()}
+            {this.renderDirectives(this.selectedType.directives || [])}
           </div>
         )}
 
@@ -725,7 +747,7 @@ export class GraphQLSchemaBuilder {
                 List
               </label>
             </div>
-            {this.renderDirectives()}
+            {this.renderDirectives(this.selectedField.directives || [])}
           </div>
         )}
       </div>
@@ -806,6 +828,59 @@ export class GraphQLSchemaBuilder {
         >
           Enums
         </div>
+      </div>
+    );
+  }
+
+  private renderFieldDetails() {
+    if (!this.selectedField) return null;
+
+    const selectedFieldName = this.selectedField.name;
+    const type = this.types.find(t => t.fields.some(f => f.name === selectedFieldName));
+    if (!type) return null;
+
+    const field = type.fields.find(f => f.name === selectedFieldName);
+    if (!field) return null;
+
+    // Check if the field type is a custom type
+    const fieldTypeWithoutModifiers = field.type.replace(/[\[\]!]/g, ''); // Remove array and non-null markers
+    const isCustomType = this.types.some(t => t.name === fieldTypeWithoutModifiers);
+    const targetType = isCustomType ? this.types.find(t => t.name === fieldTypeWithoutModifiers) : null;
+
+    return (
+      <div class="field-details">
+        <div class="field-header">
+          <h3>{field.name}</h3>
+          <button class="delete-btn" onClick={() => this.handleDeleteField(type, field)}>
+            Delete
+          </button>
+        </div>
+        <div class="field-info">
+          <div class="info-row">
+            <span class="info-label">Type:</span>
+            <span class="info-value">{field.type}</span>
+          </div>
+          {field.description && (
+            <div class="info-row">
+              <span class="info-label">Description:</span>
+              <span class="info-value">{field.description}</span>
+            </div>
+          )}
+          {isCustomType && targetType && (
+            <div class="info-row">
+              <span class="info-label">Data Entity:</span>
+              <div class="data-entity-info">
+                <span class="entity-name">{targetType.name}</span>
+                {targetType.directives?.includes('@dataEntity') && (
+                  <span class="entity-version">
+                    Version: 1
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        {this.renderDirectives(field.directives || [])}
       </div>
     );
   }

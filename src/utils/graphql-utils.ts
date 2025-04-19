@@ -14,135 +14,126 @@ import {
   GraphQLEnumType,
 } from 'graphql';
 
-export function parseGraphQLSchema(schemaString: string): GraphQLType[] {
-  try {
-    const schema = buildSchema(schemaString);
-    const types: GraphQLType[] = [];
-    const typeMap = schema.getTypeMap();
+export function parseGraphQLSchema(schema: string): GraphQLType[] {
+  const types: GraphQLType[] = [];
+  const lines = schema.split('\n');
+  let currentType: GraphQLType = null;
+  let currentField: GraphQLField = null;
 
-    for (const [typeName, type] of Object.entries(typeMap)) {
-      // Skip built-in types
-      if (typeName.startsWith('__')) {
-        continue;
-      }
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
 
-      // Handle enum types
-      if (isEnumType(type)) {
-        const enumType = type as GraphQLEnumType;
-        types.push({
-          name: typeName,
-          fields: [],
-          description: enumType.description || '',
-          kind: 'enum',
-          values: enumType.getValues().map(v => v.name)
-        });
-        continue;
-      }
+    // Parse type definition
+    if (line.startsWith('type ') || line.startsWith('enum ')) {
+      const kind = line.startsWith('type ') ? 'type' : 'enum';
+      const name = line.split(' ')[1].split('{')[0].trim();
+      currentType = {
+        name,
+        fields: [],
+        kind,
+        directives: [],
+        directiveArgs: {}
+      };
+      types.push(currentType);
+    }
+    // Parse field definition
+    else if (line.includes(':')) {
+      // Split by colon and get the field name and the rest
+      const [fieldName, rest] = line.split(':').map(s => s.trim());
+      
+      // Extract the type part before any directives
+      const typeMatch = rest.match(/^([^@]+)/);
+      if (!typeMatch) continue;
+      
+      const typePart = typeMatch[1].trim();
+      const isRequired = typePart.endsWith('!');
+      const isList = typePart.startsWith('[');
+      const type = typePart.replace(/[\[\]!]/g, '').trim();
+      
+      currentField = {
+        name: fieldName,
+        type,
+        isRequired,
+        isList,
+        directives: [],
+        directiveArgs: {}
+      };
+      currentType.fields.push(currentField);
 
-      // Handle object types
-      if (isObjectType(type) || isInputObjectType(type)) {
-        const fields = type.getFields();
-        const parsedType: GraphQLType = {
-          name: typeName,
-          fields: [],
-          description: type.description || '',
-          isCustom: false,
-          kind: 'type'
-        };
-
-        for (const [fieldName, field] of Object.entries(fields)) {
-          let fieldType = field.type;
-          let isList = false;
-          let isRequired = false;
-
-          // Handle non-null and list types
-          if (fieldType instanceof GraphQLNonNull) {
-            isRequired = true;
-            fieldType = fieldType.ofType;
-          }
-
-          if (fieldType instanceof GraphQLList) {
-            isList = true;
-            fieldType = fieldType.ofType;
-            // Check if the list items are non-null
-            if (fieldType instanceof GraphQLNonNull) {
-              isRequired = true;
-              fieldType = fieldType.ofType;
+      // Parse any directives that might be after the type
+      const directiveMatch = rest.match(/@(\w+)(?:\(([^)]+)\))?/);
+      if (directiveMatch) {
+        const directive = `@${directiveMatch[1]}`;
+        const args = directiveMatch[2];
+        
+        if (!currentField.directives) currentField.directives = [];
+        if (!currentField.directiveArgs) currentField.directiveArgs = {};
+        currentField.directives.push(directive);
+        
+        if (args) {
+          const argMatch = args.match(/(\w+)='([^']+)'/);
+          if (argMatch) {
+            const [_, argName, argValue] = argMatch;
+            if (directive === '@standardizedAttribute') {
+              currentField.directiveArgs.standardizedAttributeVersionId = argValue;
+            } else if (directive === '@dataEntity') {
+              currentField.directiveArgs.dataEntityVersionId = argValue;
             }
           }
-
-          parsedType.fields.push({
-            name: fieldName,
-            type: fieldType.toString(),
-            description: field.description || '',
-            isRequired,
-            isList,
-            directives: field.astNode?.directives?.map(d => print(d)) || [],
-          });
         }
-
-        types.push(parsedType);
       }
     }
-
-    return types;
-  } catch (error) {
-    console.error('Error parsing GraphQL schema:', error);
-    throw error;
+    // Parse enum values
+    else if (currentType?.kind === 'enum' && line.match(/^\w+$/)) {
+      if (!currentType.values) currentType.values = [];
+      currentType.values.push(line);
+    }
   }
+
+  return types;
 }
 
 export function generateGraphQLSchema(types: GraphQLType[]): string {
   let schema = '';
 
   for (const type of types) {
-    if (type.description) {
-      schema += `"""
-${type.description}
-"""\n`;
-    }
-
-    if (type.kind === 'enum') {
-      schema += `enum ${type.name} {\n`;
-      type.values?.forEach(value => {
-        schema += `  ${value}\n`;
-      });
+    if (type.kind === 'type') {
+      schema += `type ${type.name}`;
+      if (type.directives?.length) {
+        schema += ' ' + type.directives.map(directive => {
+          if (directive === '@standardizedAttribute' && type.directiveArgs?.standardizedAttributeVersionId) {
+            return `${directive}(standardizedAttributeVersionId='${type.directiveArgs.standardizedAttributeVersionId}')`;
+          } else if (directive === '@dataEntity' && type.directiveArgs?.dataEntityVersionId) {
+            return `${directive}(dataEntityVersionId='${type.directiveArgs.dataEntityVersionId}')`;
+          }
+          return directive;
+        }).join(' ');
+      }
+      schema += ' {\n';
+      
+      for (const field of type.fields) {
+        schema += `  ${field.name}: ${field.isList ? '[' : ''}${field.type}${field.isList ? ']' : ''}${field.isRequired ? '!' : ''}`;
+        if (field.directives?.length) {
+          schema += ' ' + field.directives.map(directive => {
+            if (directive === '@standardizedAttribute' && field.directiveArgs?.standardizedAttributeVersionId) {
+              return `${directive}(standardizedAttributeVersionId='${field.directiveArgs.standardizedAttributeVersionId}')`;
+            } else if (directive === '@dataEntity' && field.directiveArgs?.dataEntityVersionId) {
+              return `${directive}(dataEntityVersionId='${field.directiveArgs.dataEntityVersionId}')`;
+            }
+            return directive;
+          }).join(' ');
+        }
+        schema += '\n';
+      }
       schema += '}\n\n';
-      continue;
+    } else if (type.kind === 'enum') {
+      schema += `enum ${type.name} {\n`;
+      for (const value of type.values || []) {
+        schema += `  ${value}\n`;
+      }
+      schema += '}\n\n';
     }
-
-    schema += `type ${type.name} {\n`;
-
-    for (const field of type.fields) {
-      if (field.description) {
-        schema += `  """
-  ${field.description}
-  """\n`;
-      }
-
-      let fieldType = field.type;
-      if (field.isList) {
-        fieldType = `[${fieldType}]`;
-      }
-      if (field.isRequired) {
-        fieldType = `${fieldType}!`;
-      }
-
-      const directives = field.directives?.length 
-        ? ' ' + field.directives.join(' ') 
-        : '';
-      schema += `  ${field.name}: ${fieldType}${directives}\n`;
-    }
-
-    schema += '}\n\n';
-  }
-
-  // Validate the generated schema
-  try {
-    buildSchema(schema);
-  } catch (error) {
-    console.error('Generated invalid GraphQL schema:', error);
-    throw error;
   }
 
   return schema.trim();

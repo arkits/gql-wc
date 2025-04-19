@@ -6,6 +6,7 @@ export interface GraphQLType {
   directives?: string[];
   kind: 'type' | 'enum';
   values?: string[]; // For enum types
+  directiveArgs?: { [key: string]: string };
 }
 
 export interface GraphQLField {
@@ -15,4 +16,5 @@ export interface GraphQLField {
   isRequired?: boolean;
   isList?: boolean;
   directives?: string[];
+  directiveArgs?: { [key: string]: string };
 } 
