@@ -85,22 +85,15 @@
 }
 
 .type-badge {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 500;
-  text-transform: uppercase;
-  margin-left: 8px;
+  display: none;
 }
 
 .type-badge.type {
-  background-color: #dbeafe;
-  color: #1e40af;
+  display: none;
 }
 
 .type-badge.enum {
-  background-color: #f0fdf4;
-  color: #166534;
+  display: none;
 }
 
 .types-grid {
@@ -136,6 +129,10 @@
   position: relative;
 }
 
+.type-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .type-card.selected {
   box-shadow: 0 0 0 2px #3b82f6;
 }
@@ -165,14 +162,7 @@
 }
 
 .type-header .attribute-count {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background-color: #f3f4f6;
-  color: #6b7280;
-  font-weight: 500;
-  margin-left: 8px;
-  white-space: nowrap;
+  display: none;
 }
 
 .type-header .delete-btn {
@@ -190,7 +180,7 @@
   width: 100%;
 }
 
-.fields {
+.type-card .fields {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -199,6 +189,7 @@
   max-height: calc(100% - 60px);
   min-height: 200px;
   padding-right: 4px;
+  padding-bottom: 40px;
 }
 
 .field {
@@ -248,7 +239,7 @@
   background: #f0f9ff;
 }
 
-.add-field-btn {
+.type-card .add-field-btn {
   background: none;
   border: 1px dashed #d1d5db;
   color: #6b7280;
@@ -257,13 +248,30 @@
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s ease;
-  width: 100%;
-  margin-top: auto;
+  width: calc(100% - 32px);
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  opacity: 0;
+  transform: translateY(4px);
+  z-index: 1;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.add-field-btn:hover {
+.type-card:hover .add-field-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.type-card .add-field-btn:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.type-card .attribute-count {
+  display: none;
 }
 
 .add-type-btn {
@@ -1490,13 +1498,5 @@ input[type="checkbox"] {
 }
 
 .type-card .attribute-count {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background-color: #f3f4f6;
-  color: #6b7280;
-  font-weight: 500;
+  display: none;
 } 

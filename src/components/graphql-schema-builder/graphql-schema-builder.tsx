@@ -480,9 +480,6 @@ export class GraphQLSchemaBuilder {
         <div class="type-header">
           <h3>
             {type.name}
-            <span class={`type-badge ${type.kind}`}>
-              {type.kind}
-            </span>
             {directiveBadges.map(badge => (
               <span 
                 class="directive-badge"
@@ -589,11 +586,6 @@ export class GraphQLSchemaBuilder {
               + Add Value
             </button>
           </div>
-        )}
-        {type.kind === 'type' && (
-          <span class="attribute-count">
-            {type.fields.length} {type.fields.length === 1 ? 'attribute' : 'attributes'}
-          </span>
         )}
       </div>
     );
