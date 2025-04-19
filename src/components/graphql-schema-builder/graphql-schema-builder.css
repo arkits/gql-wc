@@ -141,9 +141,10 @@
 
 .type-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 12px;
+  position: relative;
 }
 
 .type-header h3 {
@@ -154,11 +155,27 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 100%;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
+  padding-right: 32px;
+}
+
+.type-header .delete-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+}
+
+.type-header .directive-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-left: 0;
+  width: 100%;
 }
 
 .fields {
@@ -1311,6 +1328,7 @@ input[type="checkbox"] {
   color: white;
   margin-left: 4px;
   white-space: nowrap;
+  text-transform: uppercase;
 }
 
 .directive-badge.small {
