@@ -26,6 +26,9 @@ export class GraphQLSchemaBuilder {
   @State() importSchemaText: string = '';
   @State() showFilterDropdown: boolean = false;
   @State() typeFilter: ('type' | 'enum')[] = ['type'];
+  @State() viewMode: 'card' | 'tree' = 'card';
+  @State() showViewDropdown: boolean = false;
+  @State() collapsedTypes: Set<string> = new Set();
 
   @Event() schemaChange: EventEmitter<{
     types: GraphQLType[];
@@ -96,6 +99,7 @@ export class GraphQLSchemaBuilder {
         this.selectedType = parentType;
         this.selectedField = field;
         this.activeTab = 'field';
+        console.log('Selected field:', this.selectedField);
       }
     }
   };
@@ -200,6 +204,7 @@ export class GraphQLSchemaBuilder {
         return;
       }
       this.selectedType = { ...this.selectedType, name: newName };
+      console.log('Selected type:', this.selectedType);
       this.types = this.types.map(t => 
         t.name === this.selectedType.name ? this.selectedType : t
       );
@@ -222,6 +227,7 @@ export class GraphQLSchemaBuilder {
       this.selectedType.fields = this.selectedType.fields.map(f =>
         f.name === this.selectedField.name ? this.selectedField : f
       );
+      console.log('Selected field:', this.selectedField);
       this.emitChange();
     }
   };
@@ -527,8 +533,8 @@ export class GraphQLSchemaBuilder {
   }
 
   private parseVersionId(directive: string): string | null {
-    // Handle both formats: @directive(arg='value') and @directive(arg="value")
-    const match = directive.match(/(?:standardizedAttributeVersionId|dataEntityVersionId)=['"]([^'"]+)['"]/);
+    // Extract version ID from standardizedAttribute or dataEntity directive
+    const match = directive.match(/(?:standardizedAttributeVersionId|dataEntityVersionId):\s*['"]([^'"]+)['"]/);
     return match ? match[1] : null;
   }
 
@@ -621,6 +627,101 @@ export class GraphQLSchemaBuilder {
     }
   };
 
+  private parseScopeDirective(directive: string): string | null {
+    const match = directive.match(/@dpi_requiredScope\(scope:\s*['"]([^'"]+)['"]\)/);
+    return match ? match[1] : null;
+  }
+
+  private renderAuthSection(directives: string[]) {
+    const scopeDirective = directives.find(d => d.startsWith('@dpi_requiredScope'));
+    const currentScope = scopeDirective ? this.parseScopeDirective(scopeDirective) : '';
+
+    return (
+      <div class="auth-section">
+        <h3>Authorization</h3>
+        <div class="auth-scopes">
+          <div class="auth-scope">
+            <input
+              type="text"
+              value={currentScope}
+              placeholder="Enter required scope..."
+              onInput={(e) => {
+                const target = e.target as HTMLInputElement;
+                const newScope = target.value;
+                if (this.activeTab === 'type' && this.selectedType) {
+                  this.handleUpdateScope(this.selectedType, newScope);
+                } else if (this.activeTab === 'field' && this.selectedField) {
+                  this.handleUpdateScope(this.selectedField, newScope);
+                }
+              }}
+            />
+            {currentScope && (
+              <button 
+                class="delete-btn small"
+                onClick={() => {
+                  if (this.activeTab === 'type' && this.selectedType) {
+                    this.handleRemoveScope(this.selectedType);
+                  } else if (this.activeTab === 'field' && this.selectedField) {
+                    this.handleRemoveScope(this.selectedField);
+                  }
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  private handleUpdateScope = (target: GraphQLType | GraphQLField, newScope: string) => {
+    const directives = target.directives || [];
+    const scopeDirective = directives.find(d => d.startsWith('@dpi_requiredScope'));
+    
+    if (newScope.trim()) {
+      const newDirective = `@dpi_requiredScope(scope:"${newScope}")`;
+      if (scopeDirective) {
+        // Update existing directive
+        const updatedDirectives = directives.map(d => 
+          d === scopeDirective ? newDirective : d
+        );
+        if (target === this.selectedType) {
+          this.selectedType.directives = updatedDirectives;
+        } else if (target === this.selectedField) {
+          this.selectedField.directives = updatedDirectives;
+          this.selectedType.fields = this.selectedType.fields.map(f =>
+            f.name === this.selectedField.name ? this.selectedField : f
+          );
+        }
+      } else {
+        // Add new directive
+        if (target === this.selectedType) {
+          this.selectedType.directives = [...directives, newDirective];
+        } else if (target === this.selectedField) {
+          this.selectedField.directives = [...directives, newDirective];
+          this.selectedType.fields = this.selectedType.fields.map(f =>
+            f.name === this.selectedField.name ? this.selectedField : f
+          );
+        }
+      }
+    } else if (scopeDirective) {
+      // Remove directive if scope is empty
+      this.handleRemoveScope(target);
+    }
+    
+    this.emitChange();
+  };
+
+  private handleRemoveScope = (target: GraphQLType | GraphQLField) => {
+    const directives = target.directives || [];
+    const scopeDirective = directives.find(d => d.startsWith('@dpi_requiredScope'));
+    
+    if (scopeDirective) {
+      this.handleRemoveDirective(scopeDirective);
+    }
+  };
+
   private renderSidebar() {
     if (!this.selectedType) return null;
 
@@ -680,6 +781,7 @@ export class GraphQLSchemaBuilder {
               }}
             />
             {this.renderDirectives(this.selectedType.directives || [])}
+            {this.renderAuthSection(this.selectedType.directives || [])}
           </div>
         )}
 
@@ -748,6 +850,7 @@ export class GraphQLSchemaBuilder {
               </label>
             </div>
             {this.renderDirectives(this.selectedField.directives || [])}
+            {this.renderAuthSection(this.selectedField.directives || [])}
           </div>
         )}
       </div>
@@ -885,6 +988,113 @@ export class GraphQLSchemaBuilder {
     );
   }
 
+  private handleTreeNodeToggle = (typeName: string, e: MouseEvent) => {
+    e.stopPropagation();
+    const newCollapsedTypes = new Set(this.collapsedTypes);
+    if (newCollapsedTypes.has(typeName)) {
+      newCollapsedTypes.delete(typeName);
+    } else {
+      newCollapsedTypes.add(typeName);
+    }
+    this.collapsedTypes = newCollapsedTypes;
+  };
+
+  private renderTreeView() {
+    return (
+      <div class="tree-view">
+        {this.getFilteredTypes().map(type => (
+          <div class={{
+            'tree-node': true,
+            'collapsed': this.collapsedTypes.has(type.name)
+          }}>
+            <div 
+              class={{
+                'tree-node-header': true,
+                'selected': this.selectedType?.name === type.name
+              }}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('.tree-node-icon')) {
+                  this.handleTreeNodeToggle(type.name, e);
+                } else {
+                  this.handleTypeClick(type);
+                }
+              }}
+            >
+              <span 
+                class="tree-node-icon"
+                onClick={(e) => this.handleTreeNodeToggle(type.name, e)}
+              >
+                {type.kind === 'type' ? 'T' : 'E'}
+              </span>
+              <span class="tree-node-name">{type.name}</span>
+              <span class="tree-node-type">{type.kind}</span>
+            </div>
+            {type.kind === 'type' && (
+              <div class="tree-node-children">
+                {type.fields.map(field => (
+                  <div 
+                    class={{
+                      'tree-field': true,
+                      'selected': this.selectedField?.name === field.name
+                    }}
+                    onClick={() => this.handleFieldClick(field)}
+                  >
+                    <span class="tree-field-name">{field.name}</span>
+                    <span class="tree-field-type">
+                      {field.isList ? '[' : ''}
+                      {field.type}
+                      {field.isList ? ']' : ''}
+                      {field.isRequired ? '!' : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {type.kind === 'enum' && (
+              <div class="tree-node-children">
+                {type.values?.map(value => (
+                  <div class="tree-field">
+                    <span class="tree-field-name">{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  private handleViewDropdownClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    this.showViewDropdown = !this.showViewDropdown;
+  };
+
+  private renderViewDropdown() {
+    return (
+      <div class={`view-dropdown ${this.showViewDropdown ? 'show' : ''}`}>
+        <div 
+          class={`view-dropdown-item ${this.viewMode === 'card' ? 'active' : ''}`}
+          onClick={() => {
+            this.viewMode = 'card';
+            this.showViewDropdown = false;
+          }}
+        >
+          Card View
+        </div>
+        <div 
+          class={`view-dropdown-item ${this.viewMode === 'tree' ? 'active' : ''}`}
+          onClick={() => {
+            this.viewMode = 'tree';
+            this.showViewDropdown = false;
+          }}
+        >
+          Tree View
+        </div>
+      </div>
+    );
+  }
+
   render() {
     return (
       <div 
@@ -896,6 +1106,7 @@ export class GraphQLSchemaBuilder {
             this.activeTab = 'type';
             this.showAddDropdown = false;
             this.showFilterDropdown = false;
+            this.showViewDropdown = false;
           }
         }}
       >
@@ -907,6 +1118,18 @@ export class GraphQLSchemaBuilder {
               value={this.searchQuery}
               onInput={this.handleSearchChange}
             />
+          </div>
+          <div class="view-switcher">
+            <button 
+              class={{
+                'view-btn': true,
+                'active': this.showViewDropdown
+              }}
+              onClick={this.handleViewDropdownClick}
+            >
+              {this.viewMode === 'card' ? 'Card View' : 'Tree View'}
+            </button>
+            {this.renderViewDropdown()}
           </div>
           <div class="filter-buttons">
             <div class="add-buttons">
@@ -967,7 +1190,11 @@ export class GraphQLSchemaBuilder {
         </div>
         <div class="main-content">
           <div class="types-grid">
-            {this.getFilteredTypes().map(type => this.renderTypeCard(type))}
+            {this.viewMode === 'card' ? (
+              this.getFilteredTypes().map(type => this.renderTypeCard(type))
+            ) : (
+              this.renderTreeView()
+            )}
           </div>
           {this.renderSidebar()}
         </div>

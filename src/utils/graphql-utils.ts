@@ -27,7 +27,9 @@ export function parseGraphQLSchema(schema: string): GraphQLType[] {
     // Parse type definition
     if (line.startsWith('type ') || line.startsWith('enum ')) {
       const kind = line.startsWith('type ') ? 'type' : 'enum';
-      const name = line.split(' ')[1].split('{')[0].trim();
+      const typeDef = line.split('{')[0].trim();
+      const name = typeDef.split(' ')[1].trim();
+      
       currentType = {
         name,
         fields: [],
@@ -35,6 +37,29 @@ export function parseGraphQLSchema(schema: string): GraphQLType[] {
         directives: [],
         directiveArgs: {}
       };
+
+      // Parse directives on type
+      const directiveMatches = typeDef.match(/@\w+(?:\([^)]+\))?/g);
+      if (directiveMatches) {
+        currentType.directives = directiveMatches;
+        for (const directive of directiveMatches) {
+          const [_, directiveName, args] = directive.match(/@(\w+)(?:\(([^)]+)\))?/);
+          if (args) {
+            const argMatch = args.match(/(\w+):\s*['"]([^'"]+)['"]/);
+            if (argMatch) {
+              const [_, argName, argValue] = argMatch;
+              if (directive.startsWith('@dpi_requiredScope')) {
+                currentType.directiveArgs.scope = argValue;
+              } else if (directive.startsWith('@standardizedAttribute')) {
+                currentType.directiveArgs.standardizedAttributeVersionId = argValue;
+              } else if (directive.startsWith('@dataEntity')) {
+                currentType.directiveArgs.dataEntityVersionId = argValue;
+              }
+            }
+          }
+        }
+      }
+
       types.push(currentType);
     }
     // Parse field definition
@@ -59,30 +84,30 @@ export function parseGraphQLSchema(schema: string): GraphQLType[] {
         directives: [],
         directiveArgs: {}
       };
-      currentType.fields.push(currentField);
 
       // Parse any directives that might be after the type
-      const directiveMatch = rest.match(/@(\w+)(?:\(([^)]+)\))?/);
-      if (directiveMatch) {
-        const directive = `@${directiveMatch[1]}`;
-        const args = directiveMatch[2];
-        
-        if (!currentField.directives) currentField.directives = [];
-        if (!currentField.directiveArgs) currentField.directiveArgs = {};
-        currentField.directives.push(directive);
-        
-        if (args) {
-          const argMatch = args.match(/(\w+)='([^']+)'/);
-          if (argMatch) {
-            const [_, argName, argValue] = argMatch;
-            if (directive === '@standardizedAttribute') {
-              currentField.directiveArgs.standardizedAttributeVersionId = argValue;
-            } else if (directive === '@dataEntity') {
-              currentField.directiveArgs.dataEntityVersionId = argValue;
+      const directiveMatches = rest.match(/@\w+(?:\([^)]+\))?/g);
+      if (directiveMatches) {
+        currentField.directives = directiveMatches;
+        for (const directive of directiveMatches) {
+          const [_, directiveName, args] = directive.match(/@(\w+)(?:\(([^)]+)\))?/);
+          if (args) {
+            const argMatch = args.match(/(\w+):\s*['"]([^'"]+)['"]/);
+            if (argMatch) {
+              const [_, argName, argValue] = argMatch;
+              if (directive.startsWith('@dpi_requiredScope')) {
+                currentField.directiveArgs.scope = argValue;
+              } else if (directive.startsWith('@standardizedAttribute')) {
+                currentField.directiveArgs.standardizedAttributeVersionId = argValue;
+              } else if (directive.startsWith('@dataEntity')) {
+                currentField.directiveArgs.dataEntityVersionId = argValue;
+              }
             }
           }
         }
       }
+
+      currentType.fields.push(currentField);
     }
     // Parse enum values
     else if (currentType?.kind === 'enum' && line.match(/^\w+$/)) {
@@ -102,10 +127,12 @@ export function generateGraphQLSchema(types: GraphQLType[]): string {
       schema += `type ${type.name}`;
       if (type.directives?.length) {
         schema += ' ' + type.directives.map(directive => {
-          if (directive === '@standardizedAttribute' && type.directiveArgs?.standardizedAttributeVersionId) {
-            return `${directive}(standardizedAttributeVersionId='${type.directiveArgs.standardizedAttributeVersionId}')`;
+          if (directive === '@dpi_requiredScope' && type.directiveArgs?.scope) {
+            return `${directive}(scope:"${type.directiveArgs.scope}")`;
+          } else if (directive === '@standardizedAttribute' && type.directiveArgs?.standardizedAttributeVersionId) {
+            return `${directive}(standardizedAttributeVersionId:"${type.directiveArgs.standardizedAttributeVersionId}")`;
           } else if (directive === '@dataEntity' && type.directiveArgs?.dataEntityVersionId) {
-            return `${directive}(dataEntityVersionId='${type.directiveArgs.dataEntityVersionId}')`;
+            return `${directive}(dataEntityVersionId:"${type.directiveArgs.dataEntityVersionId}")`;
           }
           return directive;
         }).join(' ');
@@ -116,10 +143,12 @@ export function generateGraphQLSchema(types: GraphQLType[]): string {
         schema += `  ${field.name}: ${field.isList ? '[' : ''}${field.type}${field.isList ? ']' : ''}${field.isRequired ? '!' : ''}`;
         if (field.directives?.length) {
           schema += ' ' + field.directives.map(directive => {
-            if (directive === '@standardizedAttribute' && field.directiveArgs?.standardizedAttributeVersionId) {
-              return `${directive}(standardizedAttributeVersionId='${field.directiveArgs.standardizedAttributeVersionId}')`;
+            if (directive === '@dpi_requiredScope' && field.directiveArgs?.scope) {
+              return `${directive}(scope:"${field.directiveArgs.scope}")`;
+            } else if (directive === '@standardizedAttribute' && field.directiveArgs?.standardizedAttributeVersionId) {
+              return `${directive}(standardizedAttributeVersionId:"${field.directiveArgs.standardizedAttributeVersionId}")`;
             } else if (directive === '@dataEntity' && field.directiveArgs?.dataEntityVersionId) {
-              return `${directive}(dataEntityVersionId='${field.directiveArgs.dataEntityVersionId}')`;
+              return `${directive}(dataEntityVersionId:"${field.directiveArgs.dataEntityVersionId}")`;
             }
             return directive;
           }).join(' ');

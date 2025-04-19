@@ -47,105 +47,106 @@
         """
         User type represents a registered user in the system
         """
-        type User @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440000') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440001')
-          username: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440002')
-          email: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440003')
-          firstName: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440004')
-          lastName: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440005')
-          profile: UserProfile @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440006')
-          posts: [Post!]! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440007')
-          comments: [Comment!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440008')
-          followers: [User!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440009')
-          following: [User!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440010')
-          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440011')
-          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440012')
+        type User @dpi_requiredScope(scope:"user:read") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440000")
+          username: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440002")
+          email: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440003")
+          firstName: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440004")
+          lastName: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440005")
+          profile: UserProfile @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440006")
+          posts: [Post!]! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440007")
+          comments: [Comment!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440008")
+          followers: [User!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440009")
+          following: [User!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440010")
+          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440011")
+          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440012")
         }
 
         """
         User profile containing additional user information
         """
-        type UserProfile @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440013') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440014')
-          user: User! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440015')
-          bio: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440016')
-          avatar: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440017')
-          location: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440018')
-          website: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440019')
-          socialLinks: [SocialLink!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440020')
-          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440021')
-          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440022')
+        type UserProfile @dpi_requiredScope(scope:"profile:read") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440014")
+          user: User! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440015")
+          bio: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440016")
+          avatar: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440017")
+          location: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440018")
+          website: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440019")
+          socialLinks: [SocialLink!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440020")
+          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440021")
+          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440022")
         }
 
-        type SocialLink @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440023') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440024')
-          platform: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440025')
-          url: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440026')
-          profile: UserProfile! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440027')
+        type SocialLink @dataEntity(dataEntityVersionId:"550e8400-e29b-41d4-a716-446655440023") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440024")
+          platform: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440025")
+          url: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440026")
+          profile: UserProfile! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440027")
         }
 
         """
         Post represents user-generated content
         """
-        type Post @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440028') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440029')
-          title: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440030')
-          content: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440031')
-          author: User! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440032')
-          category: Category @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440033')
-          tags: [Tag!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440034')
-          comments: [Comment!]! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440035')
-          likes: [Like!]! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440036')
-          images: [Image!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440037')
-          status: PostStatus! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440038')
-          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440039')
-          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440040')
+        type Post @dpi_requiredScope(scope:"post:read") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440029")
+          title: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440030")
+          content: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440031")
+          author: User! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440032")
+          category: Category @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440033")
+          tags: [Tag!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440034")
+          comments: [Comment!]! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440035")
+          likes: [Like!]! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440036")
+          images: [Image!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440037")
+          status: PostStatus! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440038")
+          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440039")
+          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440040")
+          attachments: [Upload!]
         }
 
-        type Category @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440041') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440042')
-          name: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440043')
-          description: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440044')
-          posts: [Post!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440045')
-          parentCategory: Category @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440046')
-          subCategories: [Category!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440047')
+        type Category @dataEntity(dataEntityVersionId:"550e8400-e29b-41d4-a716-446655440041") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440042")
+          name: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440043")
+          description: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440044")
+          posts: [Post!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440045")
+          parentCategory: Category @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440046")
+          subCategories: [Category!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440047")
         }
 
-        type Tag @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440048') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440049')
-          name: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440050')
-          posts: [Post!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440051')
+        type Tag @dataEntity(dataEntityVersionId:"550e8400-e29b-41d4-a716-446655440048") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440049")
+          name: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440050")
+          posts: [Post!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440051")
         }
 
-        type Comment @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440052') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440053')
-          content: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440054')
-          author: User! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440055')
-          post: Post! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440056')
-          parentComment: Comment @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440057')
-          replies: [Comment!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440058')
-          likes: [Like!] @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440059')
-          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440060')
-          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440061')
+        type Comment @dpi_requiredScope(scope:"comment:read") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440053")
+          content: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440054")
+          author: User! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440055")
+          post: Post! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440056")
+          parentComment: Comment @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440057")
+          replies: [Comment!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440058")
+          likes: [Like!] @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440059")
+          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440060")
+          updatedAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440061")
         }
 
-        type Like @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440062') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440063')
-          user: User! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440064')
-          post: Post @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440065')
-          comment: Comment @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440066')
-          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440067')
+        type Like @dpi_requiredScope(scope:"like:read") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440063")
+          user: User! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440064")
+          post: Post @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440065")
+          comment: Comment @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440066")
+          createdAt: DateTime! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440067")
         }
 
-        type Image @dataEntity(dataEntityVersionId='550e8400-e29b-41d4-a716-446655440068') {
-          id: ID! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440069')
-          url: String! @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440070')
-          alt: String @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440071')
-          width: Int @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440072')
-          height: Int @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440073')
-          size: Int @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440074')
-          post: Post @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440075')
-          user: UserProfile @standardizedAttribute(standardizedAttributeVersionId='550e8400-e29b-41d4-a716-446655440076')
+        type Image @dataEntity(dataEntityVersionId:"550e8400-e29b-41d4-a716-446655440068") {
+          id: ID! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440069")
+          url: String! @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440070")
+          alt: String @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440071")
+          width: Int @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440072")
+          height: Int @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440073")
+          size: Int @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440074")
+          post: Post @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440075")
+          user: UserProfile @standardizedAttribute(standardizedAttributeVersionId:"550e8400-e29b-41d4-a716-446655440076")
         }
 
         scalar DateTime
