@@ -637,12 +637,6 @@ export class GraphQLSchemaBuilder {
       <div class="directives">
         <h3>Directives</h3>
         <table class="directives-table">
-          <thead>
-            <tr>
-              <th>Directive</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
           <tbody>
             {parsedDirectives.map((directive, index) => (
               <tr key={index}>

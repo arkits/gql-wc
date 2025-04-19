@@ -614,10 +614,20 @@ input[type="checkbox"] {
 }
 
 .auth-section h3 {
-  font-size: 13px;
+  font-size: 1.1rem;
+  color: #1f2937;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-scopes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .auth-scope {
@@ -628,6 +638,13 @@ input[type="checkbox"] {
   background: #f8fafc;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.auth-scope:hover {
+  background: #f0f9ff;
+  border-color: #bfdbfe;
 }
 
 .auth-scope input {
@@ -635,16 +652,23 @@ input[type="checkbox"] {
   color: #1f2937;
   background: white;
   border: 1px solid #e5e7eb;
-  padding: 6px 8px;
+  padding: 8px 12px;
   border-radius: 4px;
   width: 100%;
   flex: 1;
+  transition: all 0.2s ease;
+  font-family: monospace;
 }
 
 .auth-scope input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px #bfdbfe;
+}
+
+.auth-scope input::placeholder {
+  color: #9ca3af;
+  font-style: italic;
 }
 
 .auth-scope .delete-btn {
@@ -659,6 +683,16 @@ input[type="checkbox"] {
   justify-content: center;
   width: 24px;
   height: 24px;
+  transition: all 0.2s ease;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.auth-scope .delete-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 .auth-scope .delete-btn svg {
@@ -680,12 +714,24 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.add-scope-btn:hover {
+  background: #f0f9ff;
+  border-color: #bfdbfe;
+  color: #3b82f6;
 }
 
 .add-scope-btn svg {
   width: 14px;
   height: 14px;
   color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.add-scope-btn:hover svg {
+  color: #3b82f6;
 }
 
 .modal {
