@@ -3,12 +3,156 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
-    <title>Stencil Component Starter</title>
+    <title>GraphQL Schema Builder</title>
 
     <script type="module" src="/build/gql-wc.esm.js"></script>
     <script nomodule src="/build/gql-wc.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        background-color: #f3f4f6;
+      }
+      graphql-schema-builder {
+        height: 100vh;
+      }
+    </style>
   </head>
   <body>
-    <my-component first="Stencil" middle="'Don't call me a framework'" last="JS"></my-component>
+    <graphql-schema-builder id="schema-builder"></graphql-schema-builder>
+    <script>
+      const schema = `
+        """
+        Enums
+        """
+        enum PostStatus {
+          DRAFT
+          PUBLISHED
+          ARCHIVED
+        }
+
+        enum ImageFormat {
+          JPEG
+          PNG
+          GIF
+          WEBP
+        }
+
+        """
+        Custom scalar types
+        """
+        scalar Upload
+
+        """
+        User type represents a registered user in the system
+        """
+        type User {
+          id: ID!
+          username: String!
+          email: String!
+          firstName: String
+          lastName: String
+          profile: UserProfile!
+          posts: [Post!]
+          comments: [Comment!]
+          followers: [User!]
+          following: [User!]
+          createdAt: String!
+          updatedAt: String
+        }
+
+        """
+        User profile containing additional user information
+        """
+        type UserProfile {
+          id: ID!
+          user: User!
+          bio: String
+          avatar: Image
+          location: String
+          website: String
+          socialLinks: [SocialLink!]
+        }
+
+        type SocialLink {
+          id: ID!
+          platform: String!
+          url: String!
+          profile: UserProfile!
+        }
+
+        """
+        Post represents user-generated content
+        """
+        type Post {
+          id: ID!
+          title: String!
+          content: String!
+          author: User!
+          category: Category
+          tags: [Tag!]
+          comments: [Comment!]
+          likes: [Like!]
+          images: [Image!]
+          status: PostStatus!
+          createdAt: String!
+          updatedAt: String
+        }
+
+        type Category {
+          id: ID!
+          name: String!
+          description: String
+          posts: [Post!]
+          parentCategory: Category
+          subCategories: [Category!]
+        }
+
+        type Tag {
+          id: ID!
+          name: String!
+          posts: [Post!]
+        }
+
+        type Comment {
+          id: ID!
+          content: String!
+          author: User!
+          post: Post!
+          parentComment: Comment
+          replies: [Comment!]
+          likes: [Like!]
+          createdAt: String!
+          updatedAt: String
+        }
+
+        type Like {
+          id: ID!
+          user: User!
+          post: Post
+          comment: Comment
+          createdAt: String!
+        }
+
+        type Image {
+          id: ID!
+          url: String!
+          alt: String
+          width: Int
+          height: Int
+          size: Int
+          post: Post
+          user: UserProfile
+        }
+      `;
+
+      const builder = document.getElementById('schema-builder');
+      builder.schema = schema;
+
+      builder.addEventListener('schemaChange', (event) => {
+        console.log('Schema updated:', event.detail.schema);
+      });
+    </script>
   </body>
 </html>

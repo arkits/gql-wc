@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
+    <title>GraphQL Schema Explorer</title>
+
+    <script type="module" src="/build/gql-wc.esm.js"></script>
+    <script nomodule src="/build/gql-wc.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        width: 100vw;
+      }
+      graphql-explorer {
+        display: block;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <graphql-explorer schema-string='
+      """
+      A blog post with title, content and metadata
+      """
+      type Post {
+        id: ID!
+        title: String!
+        content: String!
+        excerpt: String
+        author: User!
+        categories: [Category!]
+        tags: [String!]
+        createdAt: String!
+        updatedAt: String
+        comments: [Comment!]
+        likes: Int!
+        isPublished: Boolean!
+      }
+
+      """
+      A user who can author posts and comments
+      """
+      type User {
+        id: ID!
+        username: String!
+        email: String!
+        name: String
+        bio: String
+        posts: [Post!]
+        comments: [Comment!]
+        following: [User!]
+        followers: [User!]
+        joinedAt: String!
+      }
+
+      """
+      A category for organizing posts
+      """
+      type Category {
+        id: ID!
+        name: String!
+        description: String
+        posts: [Post!]
+        parentCategory: Category
+        subcategories: [Category!]
+      }
+
+      """
+      A comment on a blog post
+      """
+      type Comment {
+        id: ID!
+        content: String!
+        author: User!
+        post: Post!
+        replies: [Comment!]
+        createdAt: String!
+        updatedAt: String
+        likes: Int!
+      }
+
+      type Query {
+        """
+        Get a single post by ID
+        """
+        post(id: ID!): Post
+
+        """
+        Get multiple posts with optional filtering
+        """
+        posts(
+          limit: Int = 10
+          offset: Int = 0
+          authorId: ID
+          categoryId: ID
+          tag: String
+          isPublished: Boolean
+        ): [Post!]!
+
+        """
+        Get a user by ID or username
+        """
+        user(id: ID, username: String): User
+
+        """
+        Get multiple users
+        """
+        users(limit: Int = 10, offset: Int = 0): [User!]!
+
+        """
+        Get a category by ID
+        """
+        category(id: ID!): Category
+
+        """
+        Get all categories
+        """
+        categories: [Category!]!
+
+        """
+        Search posts by title or content
+        """
+        searchPosts(query: String!): [Post!]!
+      }
+
+      type Mutation {
+        """
+        Create a new blog post
+        """
+        createPost(
+          title: String!
+          content: String!
+          categoryIds: [ID!]
+          tags: [String!]
+        ): Post!
+
+        """
+        Update an existing post
+        """
+        updatePost(
+          id: ID!
+          title: String
+          content: String
+          categoryIds: [ID!]
+          tags: [String!]
+          isPublished: Boolean
+        ): Post!
+
+        """
+        Delete a post
+        """
+        deletePost(id: ID!): Boolean!
+
+        """
+        Add a comment to a post
+        """
+        addComment(
+          postId: ID!
+          content: String!
+          parentCommentId: ID
+        ): Comment!
+
+        """
+        Update user profile
+        """
+        updateUser(
+          name: String
+          bio: String
+          email: String
+        ): User!
+
+        """
+        Follow or unfollow a user
+        """
+        toggleFollow(userId: ID!): Boolean!
+
+        """
+        Like or unlike a post
+        """
+        toggleLike(postId: ID!): Post!
+      }
+    '></graphql-explorer>
+  </body>
+</html>

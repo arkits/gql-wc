@@ -10,3 +10,5 @@
 
 export { format } from './utils/utils';
 export type * from './components.d.ts';
+export * from './components';
+export { GraphQLType, GraphQLField } from './components/graphql-schema-builder/types';

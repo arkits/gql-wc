@@ -1,31 +1,23 @@
 {
-  "name": "gql-wc",
-  "version": "0.0.1",
-  "description": "Stencil Component Starter",
+  "name": "graphql-schema-builder",
+  "version": "0.1.0",
+  "description": "Interactive GraphQL Schema Builder Web Component",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
   "types": "dist/types/index.d.ts",
   "collection": "dist/collection/collection-manifest.json",
   "collection:main": "dist/collection/index.js",
-  "unpkg": "dist/gql-wc/gql-wc.esm.js",
+  "unpkg": "dist/graphql-schema-builder/graphql-schema-builder.esm.js",
   "exports": {
     ".": {
-      "import": "./dist/gql-wc/gql-wc.esm.js",
-      "require": "./dist/gql-wc/gql-wc.cjs.js"
-    },
-    "./my-component": {
-      "import": "./dist/components/my-component.js",
-      "types": "./dist/components/my-component.d.ts"
+      "import": "./dist/graphql-schema-builder/graphql-schema-builder.esm.js",
+      "require": "./dist/graphql-schema-builder/graphql-schema-builder.cjs.js"
     },
     "./loader": {
       "import": "./loader/index.js",
       "require": "./loader/index.cjs",
       "types": "./loader/index.d.ts"
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/stenciljs/component-starter.git"
   },
   "files": [
     "dist/",
@@ -38,13 +30,33 @@
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate"
   },
-  "devDependencies": {
+  "dependencies": {
     "@stencil/core": "^4.27.1",
+    "graphql": "^16.10.0"
+  },
+  "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.5",
     "jest": "^29.7.0",
     "jest-cli": "^29.7.0",
     "puppeteer": "^24.3.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "graphql",
+    "schema",
+    "builder",
+    "web-components",
+    "stencil",
+    "visual",
+    "editor"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/graphql-schema-builder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/graphql-schema-builder/issues"
+  },
+  "homepage": "https://github.com/yourusername/graphql-schema-builder#readme"
 }

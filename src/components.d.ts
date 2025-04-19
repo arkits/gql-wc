@@ -5,7 +5,13 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { GraphQLType } from "./components/graphql-schema-builder/types";
+export { GraphQLType } from "./components/graphql-schema-builder/types";
 export namespace Components {
+    interface GraphqlSchemaBuilder {
+        "externalEntities": { [key: string]: any[] };
+        "schema": string;
+    }
     interface MyComponent {
         /**
           * The first name
@@ -21,7 +27,31 @@ export namespace Components {
         "middle": string;
     }
 }
+export interface GraphqlSchemaBuilderCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLGraphqlSchemaBuilderElement;
+}
 declare global {
+    interface HTMLGraphqlSchemaBuilderElementEventMap {
+        "schemaChange": {
+    types: GraphQLType[];
+    schema: string;
+  };
+    }
+    interface HTMLGraphqlSchemaBuilderElement extends Components.GraphqlSchemaBuilder, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLGraphqlSchemaBuilderElementEventMap>(type: K, listener: (this: HTMLGraphqlSchemaBuilderElement, ev: GraphqlSchemaBuilderCustomEvent<HTMLGraphqlSchemaBuilderElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLGraphqlSchemaBuilderElementEventMap>(type: K, listener: (this: HTMLGraphqlSchemaBuilderElement, ev: GraphqlSchemaBuilderCustomEvent<HTMLGraphqlSchemaBuilderElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+    }
+    var HTMLGraphqlSchemaBuilderElement: {
+        prototype: HTMLGraphqlSchemaBuilderElement;
+        new (): HTMLGraphqlSchemaBuilderElement;
+    };
     interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
     }
     var HTMLMyComponentElement: {
@@ -29,10 +59,19 @@ declare global {
         new (): HTMLMyComponentElement;
     };
     interface HTMLElementTagNameMap {
+        "graphql-schema-builder": HTMLGraphqlSchemaBuilderElement;
         "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
+    interface GraphqlSchemaBuilder {
+        "externalEntities"?: { [key: string]: any[] };
+        "onSchemaChange"?: (event: GraphqlSchemaBuilderCustomEvent<{
+    types: GraphQLType[];
+    schema: string;
+  }>) => void;
+        "schema"?: string;
+    }
     interface MyComponent {
         /**
           * The first name
@@ -48,6 +87,7 @@ declare namespace LocalJSX {
         "middle"?: string;
     }
     interface IntrinsicElements {
+        "graphql-schema-builder": GraphqlSchemaBuilder;
         "my-component": MyComponent;
     }
 }
@@ -55,6 +95,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "graphql-schema-builder": LocalJSX.GraphqlSchemaBuilder & JSXBase.HTMLAttributes<HTMLGraphqlSchemaBuilderElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }
