@@ -19,6 +19,13 @@ export class GraphQLSchemaBuilder {
   @State() activeTab: 'type' | 'field' = 'type';
   @State() dragOverType: string = null;
   @State() dragOverField: string = null;
+  @State() searchQuery: string = '';
+  @State() showAddDropdown: boolean = false;
+  @State() showSchemaModal: boolean = false;
+  @State() showImportModal: boolean = false;
+  @State() importSchemaText: string = '';
+  @State() showFilterDropdown: boolean = false;
+  @State() typeFilter: ('type' | 'enum')[] = ['type'];
 
   @Event() schemaChange: EventEmitter<{
     types: GraphQLType[];
@@ -230,7 +237,13 @@ export class GraphQLSchemaBuilder {
     }
   };
 
+  private handleAddDropdownClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    this.showAddDropdown = !this.showAddDropdown;
+  };
+
   private handleAddType = () => {
+    this.showAddDropdown = false;
     const name = this.generateUniqueName('NewType');
     const newType: GraphQLType = {
       name,
@@ -245,6 +258,7 @@ export class GraphQLSchemaBuilder {
   };
 
   private handleAddEnum = () => {
+    this.showAddDropdown = false;
     const name = this.generateUniqueName('NewEnum');
     const newEnum: GraphQLType = {
       name,
@@ -329,6 +343,72 @@ export class GraphQLSchemaBuilder {
     this.activeTab = 'type';
   };
 
+  private handleFilterClick = () => {
+    this.showFilterDropdown = !this.showFilterDropdown;
+  };
+
+  private handleFilterChange = (kind: 'type' | 'enum') => {
+    if (this.typeFilter.includes(kind)) {
+      this.typeFilter = this.typeFilter.filter(k => k !== kind);
+    } else {
+      this.typeFilter = [...this.typeFilter, kind];
+    }
+  };
+
+  private getFilteredTypes(): GraphQLType[] {
+    let filtered = this.types;
+    
+    // Apply type filter
+    filtered = filtered.filter(type => this.typeFilter.includes(type.kind));
+    
+    // Apply search filter
+    if (this.searchQuery) {
+      const query = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(type => 
+        type.name.toLowerCase().includes(query) ||
+        type.description?.toLowerCase().includes(query) ||
+        type.fields.some(field => 
+          field.name.toLowerCase().includes(query) ||
+          field.description?.toLowerCase().includes(query)
+        )
+      );
+    }
+    
+    return filtered;
+  }
+
+  private handleSearchChange = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    this.searchQuery = input.value;
+  };
+
+  private handleViewSchema = () => {
+    this.showSchemaModal = true;
+  };
+
+  private handleImportSchema = () => {
+    this.showImportModal = true;
+  };
+
+  private handleCloseModal = () => {
+    this.showSchemaModal = false;
+    this.showImportModal = false;
+    this.importSchemaText = '';
+  };
+
+  private handleImportSubmit = () => {
+    try {
+      this.types = parseGraphQLSchema(this.importSchemaText);
+      this.handleCloseModal();
+      this.emitChange();
+    } catch (err) {
+      this.error = err.message;
+      setTimeout(() => {
+        this.error = null;
+      }, 3000);
+    }
+  };
+
   private renderTypeCard(type: GraphQLType) {
     return (
       <div 
@@ -344,7 +424,12 @@ export class GraphQLSchemaBuilder {
         onDragLeave={() => this.handleDragLeave()}
       >
         <div class="type-header">
-          <h3>{type.name}</h3>
+          <h3>
+            {type.name}
+            <span class={`type-badge ${type.kind}`}>
+              {type.kind}
+            </span>
+          </h3>
           <button 
             class="delete-btn"
             onClick={(e) => {
@@ -439,11 +524,13 @@ export class GraphQLSchemaBuilder {
       ? this.selectedType?.directives || []
       : this.selectedField?.directives || [];
 
+    const isDeprecated = directives.includes('@deprecated');
+
     return (
       <div class="directives">
         <h3>Directives</h3>
         <div class="directive-list">
-          {directives.map(directive => (
+          {directives.filter(d => d !== '@deprecated').map(directive => (
             <div class="directive-item">
               <span>{directive}</span>
               <button 
@@ -456,12 +543,21 @@ export class GraphQLSchemaBuilder {
           ))}
         </div>
         <div class="directive-options">
-          <button 
-            class="add-directive-btn"
-            onClick={() => this.handleAddDirective('@deprecated')}
-          >
-            Add @deprecated
-          </button>
+          <label class="directive-checkbox">
+            <input
+              type="checkbox"
+              checked={isDeprecated}
+              onChange={(e) => {
+                const target = e.target as HTMLInputElement;
+                if (target.checked) {
+                  this.handleAddDirective('@deprecated');
+                } else {
+                  this.handleRemoveDirective('@deprecated');
+                }
+              }}
+            />
+            Deprecated
+          </label>
         </div>
       </div>
     );
@@ -472,17 +568,21 @@ export class GraphQLSchemaBuilder {
       if (!this.selectedType.directives) {
         this.selectedType.directives = [];
       }
-      this.selectedType.directives = [...this.selectedType.directives, directive];
-      this.emitChange();
+      if (!this.selectedType.directives.includes(directive)) {
+        this.selectedType.directives = [...this.selectedType.directives, directive];
+        this.emitChange();
+      }
     } else if (this.activeTab === 'field' && this.selectedField) {
       if (!this.selectedField.directives) {
         this.selectedField.directives = [];
       }
-      this.selectedField.directives = [...this.selectedField.directives, directive];
-      this.selectedType.fields = this.selectedType.fields.map(f =>
-        f.name === this.selectedField.name ? this.selectedField : f
-      );
-      this.emitChange();
+      if (!this.selectedField.directives.includes(directive)) {
+        this.selectedField.directives = [...this.selectedField.directives, directive];
+        this.selectedType.fields = this.selectedType.fields.map(f =>
+          f.name === this.selectedField.name ? this.selectedField : f
+        );
+        this.emitChange();
+      }
     }
   };
 
@@ -632,6 +732,84 @@ export class GraphQLSchemaBuilder {
     );
   }
 
+  private renderSchemaModal() {
+    if (!this.showSchemaModal) return null;
+
+    const schema = generateGraphQLSchema(this.types);
+
+    return (
+      <div class="modal show" onClick={this.handleCloseModal}>
+        <div class="modal-content" onClick={e => e.stopPropagation()}>
+          <div class="modal-header">
+            <h2>GraphQL Schema</h2>
+            <button class="modal-close" onClick={this.handleCloseModal}>×</button>
+          </div>
+          <textarea 
+            class="schema-textarea"
+            value={schema}
+            readOnly
+          />
+          <div class="modal-actions">
+            <button class="modal-btn secondary" onClick={this.handleCloseModal}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  private renderImportModal() {
+    if (!this.showImportModal) return null;
+
+    return (
+      <div class="modal show" onClick={this.handleCloseModal}>
+        <div class="modal-content" onClick={e => e.stopPropagation()}>
+          <div class="modal-header">
+            <h2>Import GraphQL Schema</h2>
+            <button class="modal-close" onClick={this.handleCloseModal}>×</button>
+          </div>
+          <textarea 
+            class="schema-textarea"
+            value={this.importSchemaText}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              this.importSchemaText = target.value;
+            }}
+            placeholder="Paste your GraphQL schema here..."
+          />
+          <div class="modal-actions">
+            <button class="modal-btn secondary" onClick={this.handleCloseModal}>
+              Cancel
+            </button>
+            <button class="modal-btn primary" onClick={this.handleImportSubmit}>
+              Import
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  private renderFilterDropdown() {
+    return (
+      <div class={`filter-dropdown ${this.showFilterDropdown ? 'show' : ''}`}>
+        <div 
+          class={`filter-dropdown-item ${this.typeFilter.includes('type') ? 'active' : ''}`}
+          onClick={() => this.handleFilterChange('type')}
+        >
+          Types
+        </div>
+        <div 
+          class={`filter-dropdown-item ${this.typeFilter.includes('enum') ? 'active' : ''}`}
+          onClick={() => this.handleFilterChange('enum')}
+        >
+          Enums
+        </div>
+      </div>
+    );
+  }
+
   render() {
     return (
       <div 
@@ -641,38 +819,90 @@ export class GraphQLSchemaBuilder {
             this.selectedType = null;
             this.selectedField = null;
             this.activeTab = 'type';
+            this.showAddDropdown = false;
+            this.showFilterDropdown = false;
           }
         }}
       >
-        <div class="types-grid">
-          {this.types.map(type => this.renderTypeCard(type))}
-          <div class="add-buttons">
+        <div class="header">
+          <div class="search-box">
+            <input
+              type="text"
+              placeholder="Search types and fields..."
+              value={this.searchQuery}
+              onInput={this.handleSearchChange}
+            />
+          </div>
+          <div class="filter-buttons">
+            <div class="add-buttons">
+              <button 
+                class="filter-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  this.handleFilterClick();
+                }}
+              >
+                Filter
+              </button>
+              {this.renderFilterDropdown()}
+            </div>
+          </div>
+          <div class="schema-buttons">
             <button 
-              class="add-type-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                this.handleAddType();
-              }}
+              class="schema-btn"
+              onClick={this.handleViewSchema}
             >
-              + Add New Type
+              View Schema
             </button>
             <button 
-              class="add-type-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                this.handleAddEnum();
-              }}
+              class="schema-btn"
+              onClick={this.handleImportSchema}
             >
-              + Add New Enum
+              Import Schema
             </button>
+            <div class="add-buttons">
+              <button 
+                class="add-type-btn"
+                onClick={this.handleAddDropdownClick}
+              >
+                Add New
+              </button>
+              <div class={`add-dropdown ${this.showAddDropdown ? 'show' : ''}`}>
+                <div 
+                  class="add-dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    this.handleAddType();
+                  }}
+                >
+                  Type
+                </div>
+                <div 
+                  class="add-dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    this.handleAddEnum();
+                  }}
+                >
+                  Enum
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        {this.renderSidebar()}
+        <div class="main-content">
+          <div class="types-grid">
+            {this.getFilteredTypes().map(type => this.renderTypeCard(type))}
+          </div>
+          {this.renderSidebar()}
+        </div>
         {this.error && (
           <div class="error-message">
             {this.error}
           </div>
         )}
+        {this.renderSchemaModal()}
+        {this.renderImportModal()}
       </div>
     );
   }
