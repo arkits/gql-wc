@@ -1321,12 +1321,14 @@ input[type="checkbox"] {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 15px;
+  margin-top: 15px;
 }
 
 .directives-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1rem 0;
   background: white;
   border-radius: 8px;
   overflow: hidden;
@@ -1412,7 +1414,6 @@ input[type="checkbox"] {
 .directive-options {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
 }
 
 .directive-checkbox {

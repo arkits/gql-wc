@@ -925,7 +925,6 @@ export class GraphQLSchemaBuilder {
 
         {this.activeTab === 'type' && (
           <div class="type-details">
-            <h2>Type Details</h2>
             <input
               type="text"
               value={this.selectedType.name}
@@ -992,7 +991,6 @@ export class GraphQLSchemaBuilder {
 
         {this.activeTab === 'field' && this.selectedField && (
           <div class="field-details">
-            <h2>Field Details</h2>
             <input
               type="text"
               value={this.selectedField.name}
