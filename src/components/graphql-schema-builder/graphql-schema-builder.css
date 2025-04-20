@@ -1316,6 +1316,13 @@ input[type="checkbox"] {
   border-color: #9ca3af;
 }
 
+.directives-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 .directives-table {
   width: 100%;
   border-collapse: collapse;

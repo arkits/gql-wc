@@ -30,6 +30,7 @@ export class GraphQLSchemaBuilder {
   @State() showViewDropdown: boolean = false;
   @State() collapsedTypes: Set<string> = new Set();
   @State() pendingScope: string = '';
+  @State() showAddDirectivesModal: boolean = false;
 
   @Event() schemaChange: EventEmitter<{
     types: GraphQLType[];
@@ -455,6 +456,66 @@ export class GraphQLSchemaBuilder {
     return badges;
   }
 
+  private handleAddDirectivesModal = () => {
+    this.showAddDirectivesModal = true;
+  };
+
+  private handleCloseAddDirectivesModal = () => {
+    this.showAddDirectivesModal = false;
+  };
+
+  private handleAddCustomDirective = (directive: string) => {
+    if (this.activeTab === 'type' && this.selectedType) {
+      if (!this.selectedType.directives) {
+        this.selectedType.directives = [];
+      }
+      if (!this.selectedType.directives.includes(directive)) {
+        this.selectedType.directives = [...this.selectedType.directives, directive];
+        this.emitChange();
+      }
+    } else if (this.activeTab === 'field' && this.selectedField) {
+      if (!this.selectedField.directives) {
+        this.selectedField.directives = [];
+      }
+      if (!this.selectedField.directives.includes(directive)) {
+        this.selectedField.directives = [...this.selectedField.directives, directive];
+        this.selectedType.fields = this.selectedType.fields.map(f =>
+          f.name === this.selectedField.name ? this.selectedField : f
+        );
+        this.emitChange();
+      }
+    }
+    this.handleCloseAddDirectivesModal();
+  };
+
+  private renderAddDirectivesModal() {
+    if (!this.showAddDirectivesModal) return null;
+
+    return (
+      <div class="modal show" onClick={this.handleCloseAddDirectivesModal}>
+        <div class="modal-content" onClick={e => e.stopPropagation()}>
+          <div class="modal-header">
+            <h2>Add Directive</h2>
+            <button class="modal-close" onClick={this.handleCloseAddDirectivesModal}>×</button>
+          </div>
+          <div class="modal-body">
+            <button class="modal-btn" onClick={() => this.handleAddCustomDirective('@goTag')}>
+              Add @goTag
+            </button>
+            <button class="modal-btn" onClick={() => this.handleAddCustomDirective('@goModel')}>
+              Add @goModel
+            </button>
+          </div>
+          <div class="modal-actions">
+            <button class="modal-btn secondary" onClick={this.handleCloseAddDirectivesModal}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   private renderTypeCard(type: GraphQLType) {
     const directiveBadges = this.getDirectiveBadges(type.directives);
     
@@ -622,7 +683,12 @@ export class GraphQLSchemaBuilder {
 
     return (
       <div class="directives">
-        <h3>Directives</h3>
+        <div class="directives-header">
+          <h3>Directives</h3>
+          <button class="schema-btn" onClick={this.handleAddDirectivesModal}>
+            + Add Directive
+          </button>
+        </div>
         <table class="directives-table">
           <tbody>
             {parsedDirectives.map((directive, index) => (
@@ -668,6 +734,7 @@ export class GraphQLSchemaBuilder {
             <span>Deprecated</span>
           </label>
         </div>
+        {this.renderAddDirectivesModal()}
       </div>
     );
   }
