@@ -31,6 +31,10 @@ export class GraphQLSchemaBuilder {
   @State() collapsedTypes: Set<string> = new Set();
   @State() pendingScope: string = '';
   @State() showAddDirectivesModal: boolean = false;
+  @State() sortOrder: 'alphabetical' | 'scope' = 'alphabetical';
+  @State() showSortDropdown: boolean = false;
+  @State() hoveredType: string = null;
+  @State() hoveredField: string = null;
 
   @Event() schemaChange: EventEmitter<{
     types: GraphQLType[];
@@ -382,6 +386,24 @@ export class GraphQLSchemaBuilder {
         )
       );
     }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (this.sortOrder === 'alphabetical') {
+        return a.name.localeCompare(b.name);
+      } else {
+        // Sort by scope presence
+        const aHasScope = a.directives?.some(d => d.startsWith('@dpi_requiredScope')) || false;
+        const bHasScope = b.directives?.some(d => d.startsWith('@dpi_requiredScope')) || false;
+        
+        if (aHasScope === bHasScope) {
+          // If both have or don't have scope, sort alphabetically
+          return a.name.localeCompare(b.name);
+        }
+        // Types with scope come first
+        return aHasScope ? -1 : 1;
+      }
+    });
     
     return filtered;
   }
@@ -527,6 +549,8 @@ export class GraphQLSchemaBuilder {
           'selected': this.selectedType?.name === type.name,
           'drag-over': this.dragOverType === type.name
         }}
+        onMouseEnter={() => this.hoveredType = type.name}
+        onMouseLeave={() => this.hoveredType = null}
         onClick={() => this.handleTypeClick(type)}
         onDrop={(e) => this.handleDrop(e, type)}
         onDragOver={(e) => this.handleDragOver(e, type)}
@@ -545,15 +569,22 @@ export class GraphQLSchemaBuilder {
               </span>
             ))}
           </h3>
-          <button 
-            class="delete-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              this.handleDeleteType(type);
-            }}
-          >
-            ×
-          </button>
+          {this.hoveredType === type.name && (
+            <button 
+              class="delete-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                this.handleDeleteType(type);
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-trash">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-2 14H7L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+            </button>
+          )}
         </div>
         {type.kind === 'type' ? (
           <div class="fields">
@@ -567,6 +598,8 @@ export class GraphQLSchemaBuilder {
                     'drag-over': this.dragOverField === field.name
                   }}
                   draggable={true}
+                  onMouseEnter={() => this.hoveredField = field.name}
+                  onMouseLeave={() => this.hoveredField = null}
                   onDragStart={(e) => this.handleDragStart(e, type, field)}
                   onDragEnd={this.handleDragEnd}
                   onDrop={(e) => this.handleDrop(e, type, field)}
@@ -593,15 +626,22 @@ export class GraphQLSchemaBuilder {
                       {badge.label}
                     </span>
                   ))}
-                  <button 
-                    class="delete-btn small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      this.handleDeleteField(type, field);
-                    }}
-                  >
-                    ×
-                  </button>
+                  {this.hoveredField === field.name && (
+                    <button 
+                      class="delete-btn small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        this.handleDeleteField(type, field);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-trash">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-2 14H7L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                      </svg>
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -710,7 +750,12 @@ export class GraphQLSchemaBuilder {
                     class="delete-btn small"
                     onClick={() => this.handleRemoveDirective(directives[index])}
                   >
-                    ×
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-trash">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6l-2 14H7L5 6"></path>
+                      <path d="M10 11v6"></path>
+                      <path d="M14 11v6"></path>
+                    </svg>
                   </button>
                 </td>
               </tr>
@@ -893,9 +938,9 @@ export class GraphQLSchemaBuilder {
           <button 
             class="close-btn"
             onClick={this.handleCloseSidebar}
-          >
-            ×
-          </button>
+            title="Close details"
+            aria-label="Close details"
+          />
         </div>
         <div class="tabs">
           <button 
@@ -1334,6 +1379,36 @@ export class GraphQLSchemaBuilder {
     this.showViewDropdown = !this.showViewDropdown;
   };
 
+  private handleSortDropdownClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    this.showSortDropdown = !this.showSortDropdown;
+  };
+
+  private renderSortDropdown() {
+    return (
+      <div class={`sort-dropdown ${this.showSortDropdown ? 'show' : ''}`}>
+        <div 
+          class={`sort-dropdown-item ${this.sortOrder === 'alphabetical' ? 'active' : ''}`}
+          onClick={() => {
+            this.sortOrder = 'alphabetical';
+            this.showSortDropdown = false;
+          }}
+        >
+          Alphabetical
+        </div>
+        <div 
+          class={`sort-dropdown-item ${this.sortOrder === 'scope' ? 'active' : ''}`}
+          onClick={() => {
+            this.sortOrder = 'scope';
+            this.showSortDropdown = false;
+          }}
+        >
+          By Scope
+        </div>
+      </div>
+    );
+  }
+
   private renderViewDropdown() {
     return (
       <div class={`view-dropdown ${this.showViewDropdown ? 'show' : ''}`}>
@@ -1371,6 +1446,7 @@ export class GraphQLSchemaBuilder {
             this.showAddDropdown = false;
             this.showFilterDropdown = false;
             this.showViewDropdown = false;
+            this.showSortDropdown = false;
           }
         }}
       >
@@ -1394,6 +1470,18 @@ export class GraphQLSchemaBuilder {
               {this.viewMode === 'card' ? 'Card View' : 'Tree View'}
             </button>
             {this.renderViewDropdown()}
+          </div>
+          <div class="sort-switcher">
+            <button 
+              class={{
+                'view-btn': true,
+                'active': this.showSortDropdown
+              }}
+              onClick={this.handleSortDropdownClick}
+            >
+              {this.sortOrder === 'alphabetical' ? 'Sort: A-Z' : 'Sort: By Scope'}
+            </button>
+            {this.renderSortDropdown()}
           </div>
           <div class="filter-buttons">
             <div class="add-buttons">
